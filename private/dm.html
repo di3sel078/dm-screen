@@ -1,0 +1,1322 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DM Control</title>
+    <!-- Shared variables, then the DM stylesheet (login required) -->
+    <link rel="stylesheet" href="variables.css" />
+    <link rel="stylesheet" href="dm-assets/dm.css" />
+  </head>
+  <body>
+    <div class="bg-vignette" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <div class="brand">
+        <img class="brand-logo" src="/dm-icons/d20_transparent.png" alt="" />
+        <h1 class="brand-title">Tyler's DM Screen</h1>
+      </div>
+
+      <nav class="tabs" aria-label="Views">
+        <button class="tab" data-view="encounters" type="button">
+          Encounters
+        </button>
+        <button class="tab" data-view="active" type="button">
+          Active Encounter
+        </button>
+        <button class="tab" data-view="library" type="button">Library</button>
+      </nav>
+
+      <div class="topbar-tools">
+        <span
+          class="saved-indicator"
+          id="saved-indicator"
+          role="status"
+          aria-live="off"
+        ></span>
+        <button
+          class="icon-btn"
+          id="btn-settings"
+          type="button"
+          title="Settings and data"
+          aria-label="Settings and data"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"
+            />
+          </svg>
+        </button>
+        <button
+          class="icon-btn"
+          id="btn-shortcuts"
+          type="button"
+          title="Keyboard shortcuts (?)"
+          aria-label="Keyboard shortcuts"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <rect x="2" y="6" width="20" height="12" rx="2" />
+            <path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10" />
+          </svg>
+        </button>
+        <!-- Shown only while the password lock is off; opens Settings -->
+        <button
+          class="icon-btn lock-badge"
+          id="lock-badge"
+          type="button"
+          hidden
+          title="Password lock is off. Open Settings."
+          aria-label="Password lock is off. Open Settings."
+        ></button>
+        <!-- Ends the DM login -->
+        <form method="POST" action="/logout" id="logout-form">
+          <button class="btn btn-ghost btn-sm" type="submit">Log out</button>
+        </form>
+      </div>
+    </header>
+
+    <main class="app">
+      <!-- ============ ENCOUNTER LIST ============ -->
+      <section class="view" id="view-encounters" data-view="encounters">
+        <div class="view-head">
+          <div>
+            <h2 class="view-title">Encounters</h2>
+            <p class="view-subtitle">Saved battles, ready to resume.</p>
+          </div>
+          <button class="btn btn-primary" id="btn-new-encounter" type="button">
+            + New Encounter
+          </button>
+        </div>
+        <div class="encounter-grid" id="encounter-list"></div>
+      </section>
+
+      <!-- ============ ACTIVE ENCOUNTER ============ -->
+      <section class="view" id="view-active" data-view="active">
+        <div id="active-empty" class="empty-state hidden">
+          <div class="empty-ornament" aria-hidden="true">✦</div>
+          <h2 class="empty-title">No encounter open</h2>
+          <p>Open one from the Encounters tab, or forge a new battle.</p>
+          <button
+            class="btn btn-primary"
+            id="btn-new-encounter-from-active"
+            type="button"
+          >
+            + New Encounter
+          </button>
+        </div>
+
+        <div id="active-content" class="hidden">
+          <div class="tracker-bar">
+            <div class="tracker-name">
+              <span class="tracker-label">Encounter</span>
+              <h2 class="tracker-title" id="active-name"></h2>
+              <div class="clock" id="clock">
+                <span class="clock-label">Clock</span>
+                <span class="clock-time" id="clock-time">00:00</span>
+                <button
+                  class="icon-btn clock-btn"
+                  id="btn-clock-toggle"
+                  type="button"
+                  title="Start clock"
+                  aria-label="Start clock"
+                ></button>
+                <button
+                  class="icon-btn clock-btn"
+                  id="btn-clock-reset"
+                  type="button"
+                  title="Reset clock"
+                  aria-label="Reset clock"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="14"
+                    height="14"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+                    <path d="M3 3v5h5" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="round-counter">
+              <span class="round-label">Round</span>
+              <span class="round-number" id="round-number">1</span>
+            </div>
+
+            <div class="tracker-controls">
+              <button
+                class="btn btn-ghost"
+                id="btn-prev-turn"
+                type="button"
+                title="Previous turn (P)"
+              >
+                <span class="chev" aria-hidden="true">‹</span> Prev
+              </button>
+              <button
+                class="btn btn-ghost"
+                id="btn-reset-round"
+                type="button"
+                title="Reset: put the round counter back to 1"
+              >
+                Reset
+              </button>
+              <button
+                class="btn btn-primary btn-lg"
+                id="btn-next-turn"
+                type="button"
+                title="Next turn (N)"
+              >
+                Next Turn <span class="chev" aria-hidden="true">›</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="turn-banner" id="turn-banner"></div>
+
+          <div class="tracker-actions">
+            <div class="tracker-group">
+              <button
+                class="btn btn-outline-light"
+                id="btn-add-pc"
+                type="button"
+              >
+                + Add PC
+              </button>
+              <button
+                class="btn btn-outline-red"
+                id="btn-add-enemy"
+                type="button"
+              >
+                + Add Enemy
+              </button>
+              <button
+                class="btn btn-outline-gold"
+                id="btn-add-lair"
+                type="button"
+              >
+                + Lair Action
+              </button>
+            </div>
+            <div class="segmented" role="group" aria-label="Card layout">
+              <button
+                type="button"
+                data-card-mode="compact"
+                aria-pressed="true"
+              >
+                List
+              </button>
+              <button type="button" data-card-mode="full" aria-pressed="false">
+                Cards
+              </button>
+            </div>
+            <div class="tracker-info">
+              <button
+                class="difficulty hidden"
+                id="difficulty"
+                type="button"
+                aria-haspopup="dialog"
+              ></button>
+              <span class="tracker-count" id="tracker-count"></span>
+              <div class="tracker-menu-wrap" id="tracker-menu-wrap">
+                <button
+                  class="btn btn-ghost btn-menu"
+                  id="btn-menu"
+                  type="button"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                  aria-controls="tracker-menu"
+                  title="Log, player view, hide enemies and end encounter"
+                  aria-label="More actions"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="20"
+                    height="20"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                </button>
+                <div class="tracker-menu" id="tracker-menu" hidden>
+                  <button
+                    class="btn btn-ghost"
+                    id="btn-toggle-log"
+                    type="button"
+                    aria-pressed="false"
+                    aria-controls="log-drawer"
+                    title="Combat log (L)"
+                  >
+                    Log
+                  </button>
+                  <button
+                    class="btn btn-outline-light"
+                    id="btn-player-view"
+                    type="button"
+                    title="Open the player display: turn order, PC HP, enemy health bands and conditions only"
+                  >
+                    Player View
+                  </button>
+                  <button
+                    class="btn btn-ghost"
+                    id="btn-hide-enemies"
+                    type="button"
+                    title="Hide every enemy from the player display"
+                  >
+                    Hide all enemies
+                  </button>
+                  <button
+                    class="btn btn-ghost"
+                    id="btn-reveal-enemies"
+                    type="button"
+                    title="Show every hidden enemy on the player display"
+                  >
+                    Reveal all enemies
+                  </button>
+                  <button
+                    class="btn btn-outline-red"
+                    id="btn-end-encounter"
+                    type="button"
+                    title="Close this encounter and return to the Encounters list. It stays saved."
+                  >
+                    End Encounter
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="card-grid"
+            id="combatant-cards"
+            aria-label="Combatants in initiative order"
+          ></div>
+        </div>
+      </section>
+
+      <!-- ============ LIBRARY ============ -->
+      <section class="view" id="view-library" data-view="library">
+        <div class="view-head">
+          <div>
+            <h2 class="view-title">Library</h2>
+            <p class="view-subtitle">
+              Reusable stat blocks. Editing here never touches an open
+              encounter.
+            </p>
+          </div>
+          <div class="view-head-actions">
+            <button class="btn btn-ghost" id="btn-export" type="button">
+              Export all data (JSON)
+            </button>
+            <button class="btn btn-ghost" id="btn-import" type="button">
+              Import…
+            </button>
+          </div>
+        </div>
+
+        <div class="library-columns">
+          <section class="library-col" id="lib-pc-section">
+            <div class="library-col-head">
+              <button
+                class="library-col-toggle"
+                id="lib-pc-toggle"
+                type="button"
+                data-collapse="lib-pc-body"
+                aria-expanded="true"
+                aria-controls="lib-pc-body"
+              >
+                <span class="collapse-caret" aria-hidden="true"></span>
+                <h3 class="library-col-title library-col-title--pc">
+                  Player Characters
+                </h3>
+              </button>
+              <button
+                class="btn btn-outline-light btn-sm"
+                id="btn-new-pc"
+                type="button"
+              >
+                + New PC
+              </button>
+            </div>
+            <div id="lib-pc-body">
+              <div class="library-filter">
+                <label class="field">
+                  <span class="field-label">Class</span>
+                  <select id="lib-class"></select>
+                </label>
+              </div>
+              <div class="library-list" id="library-pcs"></div>
+            </div>
+          </section>
+
+          <section class="library-col" id="lib-enemy-section">
+            <div class="library-col-head">
+              <h3 class="library-col-title library-col-title--enemy">
+                Enemies
+              </h3>
+              <div class="library-col-actions">
+                <button
+                  class="icon-btn icon-btn--img"
+                  id="lib-search-toggle"
+                  type="button"
+                  data-collapse="lib-search-panel"
+                  aria-expanded="false"
+                  aria-controls="lib-search-panel"
+                  title="Search"
+                  aria-label="Search enemies"
+                >
+                  <img src="/dm-icons/search_icon.png" alt="" />
+                </button>
+                <button
+                  class="icon-btn icon-btn--img"
+                  id="lib-filter-toggle"
+                  type="button"
+                  data-collapse="lib-filter-panel"
+                  aria-expanded="false"
+                  aria-controls="lib-filter-panel"
+                  title="Sort and filter"
+                  aria-label="Sort and filter enemies"
+                >
+                  <img src="/dm-icons/filter_icon.png" alt="" />
+                </button>
+                <button
+                  class="btn btn-outline-red btn-sm"
+                  id="btn-new-enemy"
+                  type="button"
+                >
+                  + New Enemy
+                </button>
+              </div>
+            </div>
+            <div class="library-panel" id="lib-search-panel" hidden>
+              <label class="field">
+                <span class="field-label">Search</span>
+                <input
+                  type="search"
+                  id="lib-search"
+                  placeholder="Name or type"
+                  autocomplete="off"
+                />
+              </label>
+            </div>
+            <div class="library-panel" id="lib-filter-panel" hidden>
+              <div class="library-filter">
+                <label class="field">
+                  <span class="field-label">Sort by</span>
+                  <select id="lib-sort">
+                    <option value="name">Name (A → Z)</option>
+                    <option value="name-desc">Name (Z → A)</option>
+                    <option value="cr-asc">CR (low → high)</option>
+                    <option value="cr">CR (high → low)</option>
+                    <option value="hp">HP (high → low)</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span class="field-label">CR from</span>
+                  <select id="lib-cr-min"></select>
+                </label>
+                <label class="field">
+                  <span class="field-label">CR to</span>
+                  <select id="lib-cr-max"></select>
+                </label>
+                <label class="field">
+                  <span class="field-label">Type</span>
+                  <select id="lib-type"></select>
+                </label>
+                <label class="field hidden" id="lib-type-other-field">
+                  <span class="field-label">Other type</span>
+                  <input
+                    type="text"
+                    id="lib-type-other"
+                    placeholder="e.g. lizardfolk"
+                    autocomplete="off"
+                  />
+                </label>
+                <button
+                  class="btn btn-ghost btn-sm"
+                  id="lib-clear-filters"
+                  type="button"
+                >
+                  Clear filters
+                </button>
+              </div>
+            </div>
+            <div class="library-list" id="library-enemies"></div>
+          </section>
+        </div>
+      </section>
+      <footer class="app-footer">
+        Starter monsters from the System Reference Document 5.1 by Wizards of
+        the Coast LLC, licensed
+        <a
+          href="https://creativecommons.org/licenses/by/4.0/legalcode"
+          target="_blank"
+          rel="noopener"
+          >CC BY 4.0</a
+        >. Full attribution in Settings.
+      </footer>
+    </main>
+
+    <!-- ============ COMBAT LOG DRAWER ============ -->
+    <aside class="log-drawer" id="log-drawer" aria-label="Combat log" hidden>
+      <div class="drawer-head">
+        <h2 class="drawer-title">Combat Log</h2>
+        <button class="btn btn-ghost btn-sm" id="btn-log-clear" type="button">
+          Clear
+        </button>
+        <button
+          class="icon-btn"
+          id="btn-log-close"
+          type="button"
+          aria-label="Close combat log"
+        >
+          ×
+        </button>
+      </div>
+      <ol class="log-list" id="log-list"></ol>
+    </aside>
+
+    <!-- ============ CREATURE MODAL ============ -->
+    <dialog
+      class="modal"
+      id="creature-modal"
+      aria-labelledby="creature-modal-title"
+    >
+      <form class="modal-form" id="creature-form" method="dialog" novalidate>
+        <div class="modal-head">
+          <h2 class="modal-title" id="creature-modal-title">New Creature</h2>
+          <button
+            class="icon-btn modal-close"
+            type="button"
+            data-close
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="field-row">
+            <label class="field field--grow">
+              <span class="field-label">Name</span>
+              <input
+                type="text"
+                name="name"
+                required
+                autocomplete="off"
+                placeholder="e.g. Goblin Boss"
+              />
+            </label>
+            <label class="field" data-for="enemy">
+              <span class="field-label">CR</span>
+              <select name="cr"></select>
+            </label>
+            <label class="field" data-for="pc">
+              <span class="field-label">Level</span>
+              <input type="number" name="level" min="1" max="20" value="1" />
+            </label>
+          </div>
+
+          <div class="field-row" data-for="pc">
+            <label class="field">
+              <span class="field-label">Class</span>
+              <select name="cls"></select>
+            </label>
+            <label class="field">
+              <span class="field-label">Race</span>
+              <input
+                type="text"
+                name="race"
+                autocomplete="off"
+                placeholder="e.g. Half-Elf"
+              />
+            </label>
+          </div>
+
+          <div class="field-row" data-for="enemy">
+            <div class="field">
+              <label class="field-label" for="creature-type-select">Type</label>
+              <select id="creature-type-select"></select>
+              <input
+                type="text"
+                name="creatureType"
+                class="hidden"
+                autocomplete="off"
+                aria-label="Other type"
+                placeholder="e.g. Medium humanoid (goblinoid)"
+              />
+            </div>
+            <label class="field">
+              <span class="field-label">Alignment</span>
+              <input
+                type="text"
+                name="alignment"
+                autocomplete="off"
+                placeholder="e.g. neutral evil"
+              />
+            </label>
+          </div>
+
+          <div class="field-row">
+            <label class="field">
+              <span class="field-label">HP</span>
+              <input type="number" name="hpMax" min="0" value="10" />
+            </label>
+            <label class="field">
+              <span class="field-label">AC</span>
+              <input type="number" name="ac" min="0" value="10" />
+            </label>
+            <label class="field">
+              <span class="field-label">Init Bonus</span>
+              <input
+                type="number"
+                name="initBonus"
+                title="Leave blank to use the DEX modifier"
+              />
+            </label>
+            <label class="field">
+              <span class="field-label">Speed</span>
+              <input
+                type="text"
+                name="speed"
+                autocomplete="off"
+                placeholder="30 ft."
+              />
+            </label>
+            <label class="field" id="creature-initiative-field">
+              <span class="field-label" id="creature-initiative-label">Initiative</span>
+              <input type="number" name="initiative" value="0" />
+            </label>
+          </div>
+
+          <fieldset class="stats-fieldset">
+            <legend class="field-label">Ability Scores</legend>
+            <div class="stats-inputs" id="stats-inputs"></div>
+          </fieldset>
+
+          <details class="spell-details" id="saves-details">
+            <summary class="spell-summary">
+              <span class="field-label">Saving Throws</span>
+              <span class="spell-summary-hint" id="saves-prof-hint"></span>
+            </summary>
+            <div class="save-grid" id="save-grid"></div>
+          </details>
+
+          <details class="spell-details" id="skills-details">
+            <summary class="spell-summary">
+              <span class="field-label">Skill Proficiencies</span>
+              <span class="spell-summary-hint" id="skills-prof-hint"></span>
+            </summary>
+            <p class="detail-hint">
+              Tick a skill for proficiency; tick ×2 as well for expertise.
+            </p>
+            <div class="skill-grid" id="skill-grid"></div>
+          </details>
+
+          <details class="spell-details" id="senses-details">
+            <summary class="spell-summary">
+              <span class="field-label">Senses &amp; Languages</span>
+              <span class="spell-summary-hint" id="passive-hint"></span>
+            </summary>
+            <div class="field-row">
+              <label class="field">
+                <span class="field-label">Senses</span>
+                <input
+                  type="text"
+                  name="senses"
+                  autocomplete="off"
+                  placeholder="darkvision 60 ft."
+                />
+              </label>
+              <label class="field">
+                <span class="field-label">Languages</span>
+                <input
+                  type="text"
+                  name="languages"
+                  autocomplete="off"
+                  placeholder="Common, Goblin"
+                />
+              </label>
+            </div>
+          </details>
+
+          <details class="spell-details" id="defenses-details">
+            <summary class="spell-summary">
+              <span class="field-label">Damage &amp; Condition Defenses</span>
+              <span class="spell-summary-hint"
+                >applied when a damage type is chosen</span
+              >
+            </summary>
+            <div class="def-block">
+              <span class="field-label">Resistances</span>
+              <div class="check-grid" data-def-grid="damageResistances"></div>
+            </div>
+            <div class="def-block">
+              <span class="field-label">Immunities</span>
+              <div class="check-grid" data-def-grid="damageImmunities"></div>
+            </div>
+            <div class="def-block">
+              <span class="field-label">Vulnerabilities</span>
+              <div
+                class="check-grid"
+                data-def-grid="damageVulnerabilities"
+              ></div>
+            </div>
+            <label class="field">
+              <span class="field-label">Defense notes (text only)</span>
+              <input
+                type="text"
+                name="damageNotes"
+                autocomplete="off"
+                placeholder="bludgeoning, piercing and slashing from nonmagical attacks"
+              />
+            </label>
+            <div class="def-block">
+              <span class="field-label">Condition immunities</span>
+              <div class="check-grid" data-def-grid="conditionImmunities"></div>
+            </div>
+          </details>
+
+          <details class="spell-details" id="attacks-details" data-for="enemy">
+            <summary class="spell-summary">
+              <span class="field-label">Attacks</span>
+              <span class="spell-summary-hint"
+                >to hit, save DC and damage bonus fill in from the ability and
+                CR</span
+              >
+            </summary>
+            <label class="field">
+              <span class="field-label">Multiattack</span>
+              <input
+                type="text"
+                name="multiattack"
+                autocomplete="off"
+                placeholder="The goblin boss makes two scimitar attacks."
+              />
+            </label>
+            <div class="spell-rows" id="attack-rows"></div>
+            <button
+              class="btn btn-ghost btn-sm"
+              type="button"
+              id="btn-add-attack"
+            >
+              + Add Attack
+            </button>
+            <datalist id="damage-types"></datalist>
+          </details>
+
+          <details class="spell-details" id="recharge-details" data-for="enemy">
+            <summary class="spell-summary">
+              <span class="field-label">Recharge Abilities</span>
+              <span class="spell-summary-hint"
+                >roll the die yourself, then mark it on the card</span
+              >
+            </summary>
+            <div class="spell-rows" id="recharge-rows"></div>
+            <button
+              class="btn btn-ghost btn-sm"
+              type="button"
+              id="btn-add-recharge"
+            >
+              + Add Ability
+            </button>
+          </details>
+
+          <details
+            class="spell-details"
+            id="legendary-details"
+            data-for="enemy"
+          >
+            <summary class="spell-summary">
+              <span class="field-label">Legendary</span>
+              <span class="spell-summary-hint"
+                >actions refill at the start of its turn</span
+              >
+            </summary>
+            <div class="field-row">
+              <label class="field">
+                <span class="field-label">Legendary actions / round</span>
+                <input
+                  type="number"
+                  name="legendaryActions"
+                  min="0"
+                  max="9"
+                  value="0"
+                />
+              </label>
+              <label class="field">
+                <span class="field-label">Legendary resistance / day</span>
+                <input
+                  type="number"
+                  name="legendaryResistance"
+                  min="0"
+                  max="9"
+                  value="0"
+                />
+              </label>
+            </div>
+            <label class="field">
+              <span class="field-label">Legendary actions text</span>
+              <textarea
+                name="legendaryText"
+                rows="4"
+                placeholder="Detect. The dragon makes a Wisdom (Perception) check."
+              ></textarea>
+            </label>
+          </details>
+
+          <details class="spell-details" id="text-details" data-for="enemy">
+            <summary class="spell-summary">
+              <span class="field-label">Traits, Actions &amp; Reactions</span>
+              <span class="spell-summary-hint"
+                >free text, shown in the detail view</span
+              >
+            </summary>
+            <label class="field">
+              <span class="field-label">Traits</span>
+              <textarea
+                name="traits"
+                rows="4"
+                placeholder="Nimble Escape. The goblin can take the Disengage or Hide action as a bonus action."
+              ></textarea>
+            </label>
+            <label class="field">
+              <span class="field-label">Actions</span>
+              <textarea name="actions" rows="4"></textarea>
+            </label>
+            <label class="field">
+              <span class="field-label">Reactions</span>
+              <textarea name="reactions" rows="3"></textarea>
+            </label>
+          </details>
+
+          <details class="spell-details" id="spell-details">
+            <summary class="spell-summary">
+              <span class="field-label">Spell Slots</span>
+              <span class="spell-summary-hint">optional</span>
+            </summary>
+            <div class="spell-rows" id="spell-rows"></div>
+            <button
+              class="btn btn-ghost btn-sm"
+              type="button"
+              id="btn-add-spell-level"
+            >
+              + Add Spell Level
+            </button>
+          </details>
+
+          <label class="checkbox-field" id="save-to-library-field">
+            <input type="checkbox" name="saveToLibrary" />
+            <span>Also save to the Library</span>
+          </label>
+          <label class="checkbox-field" id="creature-hidden-field">
+            <input type="checkbox" name="startHidden" />
+            <span>Start hidden from the players</span>
+          </label>
+        </div>
+
+        <div class="modal-foot">
+          <button class="btn btn-ghost" type="button" data-close>Cancel</button>
+          <button class="btn btn-primary" type="submit" id="creature-submit">
+            Save
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- ============ COMBATANT DETAIL ============ -->
+    <dialog
+      class="modal modal-lg"
+      id="detail-modal"
+      aria-labelledby="detail-title"
+    >
+      <div class="modal-form">
+        <div class="modal-head">
+          <div>
+            <h2 class="modal-title" id="detail-title">Combatant</h2>
+            <span class="detail-subtitle" id="detail-subtitle"></span>
+          </div>
+          <button
+            class="icon-btn modal-close"
+            type="button"
+            data-close
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+        <div class="modal-body detail-body" id="detail-body"></div>
+        <div class="modal-foot modal-foot--split">
+          <button class="btn btn-ghost" type="button" id="detail-edit">
+            Edit Stat Block
+          </button>
+          <button class="btn btn-primary" type="button" data-close>Done</button>
+        </div>
+      </div>
+    </dialog>
+
+    <!-- ============ ADD-TO-ENCOUNTER PICKER ============ -->
+    <dialog
+      class="modal modal-sm"
+      id="picker-modal"
+      aria-labelledby="picker-title"
+    >
+      <form class="modal-form" id="picker-form" method="dialog" novalidate>
+        <div class="modal-head">
+          <h2 class="modal-title" id="picker-title">Add Combatant</h2>
+          <button
+            class="icon-btn modal-close"
+            type="button"
+            data-close
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <label class="field field-wide">
+            <span class="field-label">From the library</span>
+            <select name="templateId" id="picker-select"></select>
+          </label>
+          <div class="field-row">
+            <label class="field">
+              <span class="field-label" id="picker-init-label">Initiative</span>
+              <input type="number" name="initiative" value="0" />
+            </label>
+            <label class="field" id="picker-count-field">
+              <span class="field-label">How many</span>
+              <input type="number" name="count" min="1" max="20" value="1" />
+            </label>
+          </div>
+          <label class="checkbox-field hidden" id="picker-group-field">
+            <input type="checkbox" name="asGroup" checked />
+            <span>Add as a group (shared initiative and stat block, separate HP)</span>
+          </label>
+          <label class="checkbox-field" id="picker-hidden-field">
+            <input type="checkbox" name="startHidden" />
+            <span>Start hidden from the players</span>
+          </label>
+          <p class="picker-empty hidden" id="picker-empty"></p>
+        </div>
+        <div class="modal-foot modal-foot--split">
+          <button class="btn btn-ghost" type="button" id="picker-create-new">
+            Create New…
+          </button>
+          <div>
+            <button class="btn btn-ghost" type="button" data-close>
+              Cancel
+            </button>
+            <button class="btn btn-primary" type="submit" id="picker-submit">
+              Add to Encounter
+            </button>
+          </div>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- ============ GROUP DIALOG ============ -->
+    <dialog
+      class="modal modal-sm"
+      id="group-modal"
+      aria-labelledby="group-title"
+    >
+      <form class="modal-form" id="group-form" method="dialog" novalidate>
+        <div class="modal-head">
+          <h2 class="modal-title" id="group-title">Group Enemies</h2>
+          <button
+            class="icon-btn modal-close"
+            type="button"
+            data-close
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <p class="detail-text" id="group-text"></p>
+          <div class="group-list" id="group-list"></div>
+        </div>
+        <div class="modal-foot modal-foot--split">
+          <button class="btn btn-outline-red" type="button" id="group-disband">
+            Disband Group
+          </button>
+          <div>
+            <button class="btn btn-ghost" type="button" data-close>Cancel</button>
+            <button class="btn btn-primary" type="submit">Save Group</button>
+          </div>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- ============ CHOICE DIALOG (pick one of several) ============ -->
+    <dialog
+      class="modal modal-sm"
+      id="choice-modal"
+      aria-labelledby="choice-title"
+    >
+      <div class="modal-form">
+        <div class="modal-head">
+          <h2 class="modal-title" id="choice-title">Choose</h2>
+          <button
+            class="icon-btn modal-close"
+            type="button"
+            data-close
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <p class="confirm-text" id="choice-text"></p>
+          <div class="choice-list" id="choice-list"></div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" type="button" data-close>Cancel</button>
+        </div>
+      </div>
+    </dialog>
+
+    <!-- ============ TEXT PROMPT DIALOG ============ -->
+    <dialog
+      class="modal modal-sm"
+      id="prompt-modal"
+      aria-labelledby="prompt-title"
+    >
+      <form class="modal-form" id="prompt-form" method="dialog" novalidate>
+        <div class="modal-head">
+          <h2 class="modal-title" id="prompt-title">Name</h2>
+          <button
+            class="icon-btn modal-close"
+            type="button"
+            data-close
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <label class="field field-wide">
+            <span class="field-label" id="prompt-label">Name</span>
+            <input
+              type="text"
+              name="value"
+              id="prompt-input"
+              autocomplete="off"
+              required
+            />
+          </label>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" type="button" data-close>Cancel</button>
+          <button class="btn btn-primary" type="submit" id="prompt-submit">
+            OK
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- ============ CONFIRM DIALOG ============ -->
+    <dialog
+      class="modal modal-sm modal-danger"
+      id="confirm-modal"
+      aria-labelledby="confirm-title"
+    >
+      <form class="modal-form" id="confirm-form" method="dialog" novalidate>
+        <div class="modal-head">
+          <h2 class="modal-title" id="confirm-title">Are you sure?</h2>
+          <button
+            class="icon-btn modal-close"
+            type="button"
+            data-close
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="confirm-text" id="confirm-text"></div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" type="button" data-close>Cancel</button>
+          <button class="btn btn-danger" type="submit" id="confirm-submit">
+            Delete
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- ============ SETTINGS ============ -->
+    <dialog class="modal" id="settings-modal" aria-labelledby="settings-title">
+      <div class="modal-form">
+        <div class="modal-head">
+          <h2 class="modal-title" id="settings-title">Settings</h2>
+          <button
+            class="icon-btn modal-close"
+            type="button"
+            data-close
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <section class="detail-section">
+            <h3 class="detail-section-title">Your data</h3>
+            <p class="detail-text">
+              Your library and encounters are saved on the server and kept in
+              this browser too. Export now and then for a backup you can keep.
+            </p>
+            <p class="detail-hint" id="settings-saved"></p>
+            <div class="settings-row">
+              <button
+                class="btn btn-primary"
+                type="button"
+                data-settings="export"
+              >
+                Export all data (JSON)
+              </button>
+              <button
+                class="btn btn-ghost"
+                type="button"
+                data-settings="import"
+              >
+                Import…
+              </button>
+            </div>
+          </section>
+          <section class="detail-section">
+            <h3 class="detail-section-title">Table</h3>
+            <div class="settings-row">
+              <button
+                class="btn btn-outline-light"
+                type="button"
+                data-settings="player-view"
+              >
+                Open Player View
+              </button>
+              <button
+                class="btn btn-ghost"
+                type="button"
+                data-settings="shortcuts"
+              >
+                Keyboard shortcuts
+              </button>
+            </div>
+            <label class="checkbox-field">
+              <input type="checkbox" id="opt-arrow-keys-settings" />
+              <span>Use the arrow keys for turns</span>
+            </label>
+          </section>
+          <section class="detail-section">
+            <h3 class="detail-section-title">Password lock</h3>
+            <p class="detail-text" id="lock-text"></p>
+            <div class="settings-row">
+              <button class="btn" type="button" id="btn-lock-toggle"></button>
+            </div>
+          </section>
+          <section class="detail-section">
+            <h3 class="detail-section-title">Credits &amp; licence</h3>
+            <p class="detail-text" id="srd-attribution"></p>
+            <p class="detail-hint">
+              Rules follow the 2014 Player's Handbook, Dungeon Master's Guide
+              and Monster Manual.
+            </p>
+          </section>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-primary" type="button" data-close>Done</button>
+        </div>
+      </div>
+    </dialog>
+
+    <!-- ============ IMPORT PREVIEW ============ -->
+    <dialog
+      class="modal modal-sm"
+      id="import-modal"
+      aria-labelledby="import-title"
+    >
+      <form class="modal-form" id="import-form" method="dialog" novalidate>
+        <div class="modal-head">
+          <h2 class="modal-title" id="import-title">Import Data</h2>
+          <button
+            class="icon-btn modal-close"
+            type="button"
+            data-close
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <p class="confirm-text" id="import-summary"></p>
+          <ul class="import-counts" id="import-counts"></ul>
+          <p class="detail-hint">
+            <strong>Merge</strong> adds everything alongside what you have.
+            <strong>Replace</strong> swaps your library and encounters for the
+            file's (export first if unsure).
+          </p>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" type="button" data-close>Cancel</button>
+          <button class="btn btn-danger" type="submit" value="replace">
+            Replace
+          </button>
+          <button class="btn btn-primary" type="submit" value="merge">
+            Merge
+          </button>
+        </div>
+      </form>
+    </dialog>
+    <input
+      type="file"
+      id="import-file"
+      accept="application/json,.json"
+      hidden
+    />
+
+    <!-- ============ KEYBOARD SHORTCUTS ============ -->
+    <!-- ============ BENCHMARK EXPLAINER ============ -->
+    <dialog
+      class="modal modal-sm"
+      id="benchmark-modal"
+      aria-labelledby="benchmark-title"
+    >
+      <div class="modal-form">
+        <div class="modal-head">
+          <h2 class="modal-title" id="benchmark-title">Encounter Benchmark</h2>
+          <button
+            class="icon-btn modal-close"
+            type="button"
+            data-close
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+        <div class="modal-body" id="benchmark-body"></div>
+        <div class="modal-foot">
+          <button class="btn btn-primary" type="button" data-close>Done</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog
+      class="modal modal-sm"
+      id="shortcuts-modal"
+      aria-labelledby="shortcuts-title"
+    >
+      <div class="modal-form">
+        <div class="modal-head">
+          <h2 class="modal-title" id="shortcuts-title">Keyboard Shortcuts</h2>
+          <button
+            class="icon-btn modal-close"
+            type="button"
+            data-close
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <table class="shortcut-table">
+            <tbody>
+              <tr>
+                <th scope="row"><kbd>N</kbd></th>
+                <td>Next turn</td>
+              </tr>
+              <tr>
+                <th scope="row"><kbd>P</kbd></th>
+                <td>Previous turn</td>
+              </tr>
+              <tr>
+                <th scope="row"><kbd>→</kbd> <kbd>←</kbd></th>
+                <td>Next / previous turn, if enabled below</td>
+              </tr>
+              <tr>
+                <th scope="row"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Z</kbd></th>
+                <td>Undo the last combat change</td>
+              </tr>
+              <tr>
+                <th scope="row"><kbd>L</kbd></th>
+                <td>Open or close the combat log</td>
+              </tr>
+              <tr>
+                <th scope="row"><kbd>?</kbd></th>
+                <td>This list</td>
+              </tr>
+              <tr>
+                <th scope="row"><kbd>Enter</kbd></th>
+                <td>In a card's amount box: apply damage</td>
+              </tr>
+              <tr>
+                <th scope="row"><kbd>Shift</kbd> + <kbd>Enter</kbd></th>
+                <td>In a card's amount box: heal</td>
+              </tr>
+              <tr>
+                <th scope="row"><kbd>Esc</kbd></th>
+                <td>Close a dialog</td>
+              </tr>
+            </tbody>
+          </table>
+          <label class="checkbox-field">
+            <input type="checkbox" id="opt-arrow-keys" />
+            <span
+              >Use the arrow keys for turns (off by default so they keep
+              scrolling the page)</span
+            >
+          </label>
+          <p class="detail-hint">
+            Shortcuts are ignored while you are typing in a field.
+          </p>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-primary" type="button" data-close>Done</button>
+        </div>
+      </div>
+    </dialog>
+
+    <div
+      class="sr-only"
+      id="sr-live"
+      aria-live="polite"
+      aria-atomic="true"
+    ></div>
+    <div class="toast-stack" id="toast-stack" aria-live="polite"></div>
+
+    <!-- Rules, starter monsters, and the DM app (login required) -->
+    <script src="dm-assets/rules.js" defer></script>
+    <script src="dm-assets/data/srd-starter.js" defer></script>
+    <script src="dm-assets/dm.js" defer></script>
+  </body>
+</html>

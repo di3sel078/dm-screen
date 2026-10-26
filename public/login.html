@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DM Login</title>
+  <!-- Shared stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="login-page">
+  <main id="login-main" class="login-panel">
+    <!-- Logo and title -->
+    <div class="brand">
+      <span class="brand-sigil" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
+          <path d="M12 2 21 7v10l-9 5-9-5V7z" />
+          <path d="M12 2v20M3 7l9 5 9-5" />
+        </svg>
+      </span>
+      <h1 class="brand-title">DM Login</h1>
+    </div>
+
+    <!-- Sends the password to the server once -->
+    <form class="panel login-panel" method="POST" action="/login">
+      <label class="field">
+        <span class="field-label">Password</span>
+        <input type="password" name="password" autocomplete="current-password" required autofocus>
+      </label>
+      <button type="submit" class="btn btn-primary btn-lg">Log in</button>
+      <!-- Error message, filled in by login.js -->
+      <p id="message" class="message" role="alert"></p>
+    </form>
+  </main>
+  <!-- Page script -->
+  <script src="login.js"></script>
+</body>
+</html>

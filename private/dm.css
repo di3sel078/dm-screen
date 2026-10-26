@@ -1,0 +1,3970 @@
+/* ==========================================================================
+   DM Dashboard — Styles
+   Consumes tokens from variables.css. Desktop-first, with breakpoints at
+   1200px, 900px and 600px so it still works on a tablet or a phone.
+   ========================================================================== */
+
+/* ---------- Reset & base ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg-1);
+  color: var(--text-0);
+  font-family: var(--font-body);
+  font-size: var(--fs-md);
+  line-height: var(--lh-normal);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-weight: 600;
+  line-height: var(--lh-tight);
+}
+p {
+  margin: 0;
+}
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+.hidden {
+  display: none !important;
+}
+
+/* Number inputs: kill the spinners, they wreck the compact cards */
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+::selection {
+  background: var(--red-500);
+  color: var(--text-0);
+}
+
+/* ---------- Atmosphere ---------- */
+.bg-vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      1200px 600px at 50% -10%,
+      var(--red-vignette),
+      transparent 60%
+    ),
+    radial-gradient(
+      900px 500px at 100% 100%,
+      var(--red-vignette-faint),
+      transparent 60%
+    ),
+    radial-gradient(ellipse at center, transparent 40%, var(--bg-0) 130%);
+}
+
+.bg-vignette::after {
+  /* faint grain so large dark surfaces don't band */
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.06;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---------- Top bar ---------- */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  height: var(--topbar-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-6);
+  padding: 0 var(--sp-6);
+  background: linear-gradient(
+    180deg,
+    var(--bg-topbar-top),
+    var(--bg-topbar-bottom)
+  );
+  backdrop-filter: var(--blur-topbar);
+  border-bottom: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-topbar);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.brand-logo {
+  height: var(--sigil);
+  width: auto;
+}
+
+.brand-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-lg);
+  letter-spacing: var(--tracking-display);
+  color: #fff;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: var(--sp-1);
+}
+
+.tab {
+  position: relative;
+  padding: var(--sp-2) var(--sp-4);
+  background: transparent;
+  border: none;
+  border-radius: var(--r-md);
+  color: var(--text-2);
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  transition:
+    color var(--dur-fast),
+    background var(--dur-fast);
+}
+.tab:hover {
+  color: var(--text-0);
+  background: var(--bg-3);
+}
+.tab::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: var(--border-accent);
+  width: 0;
+  height: var(--border-accent);
+  background: var(--red-300);
+  box-shadow: var(--glow-red);
+  transition:
+    width var(--dur-med) var(--ease-out),
+    left var(--dur-med) var(--ease-out);
+}
+.tab.is-active {
+  color: var(--text-0);
+}
+/* The underline spans exactly the label: the tab's padding on both sides, and the letter-spacing after the last letter, are left out */
+.tab.is-active::after {
+  left: var(--sp-4);
+  width: calc(100% - 2 * var(--sp-4) - var(--tracking-caps));
+}
+
+/* ---------- App layout ---------- */
+.app {
+  position: relative;
+  z-index: 1;
+  max-width: var(--app-max);
+  margin: 0 auto;
+  padding: var(--sp-6) var(--sp-6) var(--sp-8);
+}
+
+.view {
+  display: none;
+  animation: viewIn var(--dur-slow) var(--ease-out);
+}
+.view.is-active {
+  display: block;
+}
+
+@keyframes viewIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.view-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--sp-5);
+  margin-bottom: var(--sp-6);
+  padding-bottom: var(--sp-4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.view-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-2xl);
+  font-weight: 700;
+  letter-spacing: var(--tracking-display);
+}
+.view-subtitle {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  margin-top: var(--sp-1);
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--r-md);
+  border: 1px solid transparent;
+  background: var(--bg-3);
+  color: var(--text-0);
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  box-shadow: var(--shadow-inset);
+  transition:
+    background var(--dur-fast),
+    border-color var(--dur-fast),
+    transform var(--dur-fast),
+    box-shadow var(--dur-med);
+}
+.btn:hover {
+  background: var(--bg-4);
+  transform: translateY(var(--lift-sm));
+}
+.btn:active {
+  transform: translateY(0);
+}
+.btn:focus-visible {
+  outline: var(--focus-ring) solid var(--red-300);
+  outline-offset: var(--focus-ring);
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-sm {
+  padding: var(--sp-1) var(--sp-3);
+  font-size: var(--fs-xs);
+}
+.btn-lg {
+  padding: var(--sp-3) var(--sp-5);
+  font-size: var(--fs-md);
+}
+
+.btn-primary {
+  background: linear-gradient(180deg, var(--red-400), var(--red-700));
+  border-color: var(--red-300);
+  box-shadow: var(--shadow-btn-primary);
+}
+.btn-primary:hover {
+  background: linear-gradient(180deg, var(--red-300), var(--red-600));
+  box-shadow: var(--shadow-btn-primary-hover);
+}
+
+.btn-danger {
+  background: var(--red-800);
+  border-color: var(--red-500);
+}
+.btn-danger:hover {
+  background: var(--red-600);
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: var(--border-mid);
+  color: var(--text-1);
+}
+.btn-ghost:hover {
+  background: var(--bg-3);
+  color: var(--text-0);
+}
+
+.btn-outline-red {
+  background: transparent;
+  border-color: var(--red-500);
+  color: var(--red-200);
+}
+.btn-outline-red:hover {
+  background: var(--red-wash);
+  box-shadow: var(--glow-red-soft-lg);
+}
+
+.btn-outline-light {
+  background: transparent;
+  border-color: var(--border-light);
+  color: var(--text-0);
+}
+.btn-outline-light:hover {
+  background: var(--bg-hover-light);
+}
+
+.chev {
+  font-size: var(--fs-chev);
+  line-height: 0;
+}
+
+.icon-btn {
+  width: var(--icon-btn);
+  height: var(--icon-btn);
+  display: grid;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text-2);
+  font-size: var(--fs-lg);
+  line-height: 1;
+  transition:
+    background var(--dur-fast),
+    color var(--dur-fast),
+    border-color var(--dur-fast);
+}
+.icon-btn:hover {
+  background: var(--bg-3);
+  color: var(--text-0);
+}
+.icon-btn.icon-btn--danger:hover {
+  background: var(--red-900);
+  color: var(--red-200);
+  border-color: var(--red-700);
+}
+
+/* ---------- Encounter list ---------- */
+.encounter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--encounter-card-min), 1fr));
+  gap: var(--sp-4);
+}
+
+.encounter-card {
+  position: relative;
+  padding: var(--sp-5);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border-mid);
+  background: linear-gradient(160deg, var(--bg-3), var(--bg-2) 70%);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  transition:
+    border-color var(--dur-med),
+    transform var(--dur-med) var(--ease-out),
+    box-shadow var(--dur-med);
+}
+.encounter-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: var(--sp-1);
+  background: linear-gradient(180deg, var(--red-300), var(--red-800));
+  opacity: 0.7;
+  transition: opacity var(--dur-med);
+}
+.encounter-card:hover {
+  border-color: var(--red-500);
+  transform: translateY(var(--lift-md));
+  box-shadow: var(--shadow-raised);
+}
+.encounter-card:hover::before {
+  opacity: 1;
+}
+.encounter-card.is-open {
+  border-color: var(--red-400);
+  box-shadow: var(--shadow-open-encounter), var(--shadow-card);
+}
+
+.encounter-card-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  margin-bottom: var(--sp-2);
+  padding-right: var(--sp-6);
+}
+
+.encounter-meta {
+  display: flex;
+  gap: var(--sp-4);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--sp-5);
+}
+.encounter-meta strong {
+  color: var(--text-1);
+  font-weight: 600;
+}
+
+.encounter-actions {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+}
+.encounter-actions .spacer {
+  flex: 1;
+}
+
+.badge-open {
+  position: absolute;
+  top: var(--sp-4);
+  right: var(--sp-4);
+  padding: var(--sp-05) var(--sp-2);
+  border-radius: var(--r-pill);
+  background: var(--red-700);
+  color: var(--text-0);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  box-shadow: var(--glow-red-soft);
+}
+
+/* ---------- Empty states ---------- */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-8) var(--sp-6);
+  text-align: center;
+  color: var(--text-2);
+  border: 1px dashed var(--border-mid);
+  border-radius: var(--r-xl);
+  background: var(--bg-empty);
+}
+.empty-state .btn {
+  margin-top: var(--sp-3);
+}
+.empty-ornament {
+  color: var(--gold-500);
+  font-size: var(--fs-2xl);
+  text-shadow: var(--glow-text-gold);
+}
+.empty-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  color: var(--text-0);
+  letter-spacing: var(--tracking-display);
+}
+.empty-inline {
+  padding: var(--sp-5);
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  text-align: center;
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--r-md);
+}
+
+/* ---------- Tracker bar ---------- */
+.tracker-bar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--sp-5);
+  padding: var(--sp-4) var(--sp-5);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border-mid);
+  background:
+    radial-gradient(
+      600px 200px at 50% 0%,
+      var(--red-ember-soft),
+      transparent 70%
+    ),
+    linear-gradient(180deg, var(--bg-3), var(--bg-2));
+  box-shadow: var(--shadow-card);
+}
+
+.tracker-label,
+.round-label {
+  display: block;
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+}
+.tracker-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  letter-spacing: var(--tracking-display);
+  margin-top: var(--sp-05);
+}
+
+.round-counter {
+  text-align: center;
+}
+.round-number {
+  display: block;
+  font-family: var(--font-display);
+  font-size: var(--fs-hero);
+  font-weight: 900;
+  line-height: 1;
+  background: linear-gradient(180deg, var(--text-0) 30%, var(--red-200));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: none;
+  filter: var(--drop-round);
+}
+.round-number.bump {
+  animation: roundBump var(--dur-slow) var(--ease-out);
+}
+@keyframes roundBump {
+  0% {
+    transform: scale(1);
+    filter: var(--drop-round);
+  }
+  40% {
+    transform: scale(1.18);
+    filter: var(--drop-round-bump);
+  }
+  100% {
+    transform: scale(1);
+    filter: var(--drop-round);
+  }
+}
+
+.tracker-controls {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+}
+
+/* Turn banner */
+.turn-banner {
+  margin-top: var(--sp-4);
+  padding: var(--sp-2) var(--sp-4);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  border-radius: var(--r-md);
+  border-left: var(--border-bar) solid var(--red-300);
+  background: linear-gradient(90deg, var(--red-banner), transparent 70%);
+  color: var(--text-1);
+  font-size: var(--fs-sm);
+  min-height: var(--touch-target);
+}
+.turn-banner:empty {
+  display: none;
+}
+.turn-banner.is-pc {
+  border-left-color: var(--blue-300);
+  background: linear-gradient(90deg, var(--blue-glow-soft), transparent 70%);
+}
+.turn-banner strong {
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  color: var(--text-0);
+  letter-spacing: 0.03em;
+}
+.turn-note {
+  padding: var(--sp-05) var(--sp-2);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--amber-500);
+  background: var(--amber-glow-soft);
+  color: var(--amber-300);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+}
+.turn-note--stable {
+  border-color: var(--green-500);
+  background: var(--green-glow-soft);
+  color: var(--green-300);
+}
+.turn-note--dead,
+.turn-note--down {
+  border-color: var(--red-300);
+  background: var(--bg-0);
+  color: var(--text-0);
+}
+.turn-banner .turn-tag {
+  margin-left: auto;
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+}
+
+.tracker-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: var(--sp-5) 0 var(--sp-4);
+}
+/* Right-hand group: difficulty, XP, count and the menu */
+.tracker-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+  margin-left: auto;
+}
+/* "# in initiative order" pill */
+.tracker-count {
+  padding: var(--sp-1) var(--sp-3);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border-mid);
+  background: var(--bg-2);
+  color: var(--text-1);
+  font-size: var(--fs-xs);
+  white-space: nowrap;
+}
+.tracker-count:empty {
+  display: none;
+}
+
+/* ---------- Combatant cards ---------- */
+/* Cards wrap in rows so each one can be dragged to its own size. */
+.card-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-4);
+  align-items: flex-start;
+}
+.card-grid > .card,
+.group-box > .card {
+  flex: 1 1 var(--card-min);
+  max-width: var(--card-max);
+  min-width: 0;
+}
+.empty-state--wide {
+  flex-basis: 100%;
+}
+
+/* A card the DM has resized: fixed size, extra content hidden by priority */
+.card-grid > .card.is-sized,
+.group-box > .card.is-sized {
+  flex: 0 0 auto;
+  max-width: 100%;
+  overflow: hidden;
+}
+.card.is-sized > * {
+  flex-shrink: 0;
+}
+.card.is-resizing {
+  transition: none;
+  user-select: none;
+}
+.fit-hidden {
+  display: none !important;
+}
+/* Wrapper that only groups card parts for hiding; it adds no box of its own */
+.fit-group {
+  display: contents;
+}
+
+/* Corner handle for drag-resizing */
+.card-resize {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: var(--resize-handle);
+  height: var(--resize-handle);
+  padding: 0;
+  border: none;
+  border-bottom-right-radius: var(--r-lg);
+  background: linear-gradient(135deg, transparent 50%, var(--border-mid) 50%);
+  cursor: nwse-resize;
+  touch-action: none;
+  opacity: 0.6;
+  transition: opacity var(--dur-fast);
+}
+.card-resize:hover,
+.card.is-resizing .card-resize {
+  opacity: 1;
+  background: linear-gradient(135deg, transparent 50%, var(--red-300) 50%);
+}
+
+/* Line drawn along an edge of two cards that have snapped to the same size */
+.snap-guide {
+  position: fixed;
+  z-index: 60;
+  pointer-events: none;
+  background: var(--red-300);
+  box-shadow: var(--glow-red-sm);
+}
+.snap-guide--v {
+  width: 2px;
+}
+.snap-guide--h {
+  height: 2px;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border-red);
+  background: linear-gradient(170deg, var(--bg-3) 0%, var(--bg-2) 60%);
+  box-shadow: var(--shadow-card), var(--shadow-inset);
+  transition:
+    box-shadow var(--dur-slow) var(--ease-out),
+    border-color var(--dur-med),
+    transform var(--dur-slow) var(--ease-out),
+    opacity var(--dur-med);
+}
+/* Only cards that just joined animate in; re-renders leave the rest still. */
+.card.is-new {
+  animation: cardIn var(--dur-slow) var(--ease-out) both;
+}
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.card--pc {
+  border-color: var(--border-light);
+}
+.card--enemy {
+  border-color: var(--border-red);
+}
+
+.card.is-current {
+  border-color: var(--red-200);
+  box-shadow: var(--shadow-turn), var(--shadow-card);
+  transform: translateY(var(--lift-lg));
+  background: linear-gradient(170deg, var(--bg-turn-enemy) 0%, var(--bg-2) 70%);
+  animation: turnPulse var(--dur-pulse) var(--ease-in-out) infinite;
+}
+.card--pc.is-current {
+  border-color: var(--blue-300);
+  box-shadow: var(--shadow-turn-pc), var(--shadow-card);
+  background: linear-gradient(170deg, var(--blue-tint) 0%, var(--bg-2) 70%);
+  animation: turnPulsePc var(--dur-pulse) var(--ease-in-out) infinite;
+}
+@keyframes turnPulsePc {
+  0%,
+  100% {
+    box-shadow: var(--shadow-turn-pc), var(--shadow-card);
+  }
+  50% {
+    box-shadow: var(--shadow-turn-pc-peak), var(--shadow-card);
+  }
+}
+@keyframes turnPulse {
+  0%,
+  100% {
+    box-shadow: var(--shadow-turn), var(--shadow-card);
+  }
+  50% {
+    box-shadow: var(--shadow-turn-peak), var(--shadow-card);
+  }
+}
+
+.card.is-down {
+  opacity: 0.7;
+  filter: saturate(0.5);
+}
+.card.is-down.is-current {
+  opacity: 0.75;
+}
+
+/* Card header */
+.card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+}
+
+.card-initiative {
+  flex-shrink: 0;
+  width: var(--init-box);
+  min-height: var(--init-box);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-mid);
+  background: var(--bg-1);
+  box-shadow: var(--shadow-well);
+}
+.card-initiative-label {
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.init-full {
+  display: none;
+}
+.card-initiative input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  color: var(--text-0);
+  padding: 0;
+  outline: none;
+}
+.card.is-current .card-initiative {
+  border-color: var(--red-400);
+  box-shadow:
+    var(--shadow-well),
+    var(--glow-red-soft);
+}
+.card--pc.is-current .card-initiative {
+  border-color: var(--blue-400);
+  box-shadow:
+    var(--shadow-well),
+    var(--glow-blue-soft);
+}
+.card--pc.is-current .ac-shield {
+  filter: var(--drop-blue-soft);
+}
+
+.card-title-wrap {
+  flex: 1;
+  min-width: 0;
+}
+.card-name {
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow-wrap: anywhere;
+}
+/* Each entry (type, CR, race, speed...) stays whole: one that does not fit
+   moves to the next line instead of being split or cut off. */
+.card-type {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 0.5em;
+  margin-top: var(--sp-075);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+}
+.card-type > span {
+  white-space: nowrap;
+}
+/* The dot belongs to the entry before it, so it stays at the end of that line */
+.card-type > span:not(:last-child)::after {
+  content: "·";
+  margin-left: 0.5em;
+}
+
+.card--pc .card-type {
+  color: var(--text-1);
+}
+.card--enemy .card-type {
+  color: var(--red-200);
+}
+.card-down-tag {
+  margin-left: var(--sp-2);
+  padding: var(--sp-px) var(--sp-2);
+  border-radius: var(--r-pill);
+  background: var(--red-900);
+  color: var(--red-200);
+  font-size: var(--fs-2xs);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+.card-down-tag--dying {
+  background: var(--amber-glow-soft);
+  color: var(--amber-300);
+}
+.card-down-tag--stable {
+  background: var(--green-glow-soft);
+  color: var(--green-300);
+}
+.card-down-tag--dead {
+  background: var(--bg-0);
+  border: 1px solid var(--red-300);
+  color: var(--text-0);
+}
+.card-down-tag--dead::before {
+  content: "✝ ";
+}
+.card.is-dead {
+  opacity: 0.6;
+  filter: grayscale(0.85);
+}
+
+.card-tools {
+  display: flex;
+  gap: var(--sp-05);
+  flex-shrink: 0;
+}
+
+/* HP block */
+.hp-block {
+  padding: var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--bg-1);
+  border: 1px solid var(--border-subtle);
+}
+.hp-top {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+}
+.hp-label {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+.hp-values {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-1);
+  margin-left: auto;
+}
+.hp-values input {
+  width: 3.4ch;
+  border: none;
+  border-bottom: 1px solid transparent;
+  background: transparent;
+  text-align: right;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--text-0);
+  padding: 0;
+  outline: none;
+  transition: border-color var(--dur-fast);
+}
+.hp-values input:hover,
+.hp-values input:focus {
+  border-bottom-color: var(--red-300);
+}
+.hp-values .hp-cur {
+  font-size: var(--fs-xl);
+}
+.hp-values .hp-sep {
+  color: var(--text-3);
+  font-family: var(--font-display);
+}
+.hp-values .hp-max {
+  font-size: var(--fs-md);
+  color: var(--text-1);
+  text-align: left;
+}
+
+.hp-bar {
+  position: relative;
+  display: flex;
+  height: var(--hp-bar-h);
+  margin: var(--sp-2) 0 var(--sp-3);
+  border-radius: var(--r-pill);
+  background: var(--bg-3);
+  overflow: hidden;
+  box-shadow: var(--shadow-track);
+}
+.hp-bar-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--green-500), var(--green-400));
+  box-shadow: var(--glow-green);
+  transition:
+    width var(--dur-slow) var(--ease-out),
+    background var(--dur-med);
+}
+.hp-bar-fill.is-wounded {
+  background: linear-gradient(90deg, var(--amber-500), var(--amber-400));
+  box-shadow: var(--glow-amber);
+}
+.hp-bar-fill.is-critical {
+  background: linear-gradient(90deg, var(--red-500), var(--red-300));
+  box-shadow: var(--glow-red);
+}
+.hp-bar-temp {
+  height: 100%;
+  background: var(--cyan-400);
+  box-shadow: var(--glow-cyan);
+  transition: width var(--dur-slow) var(--ease-out);
+}
+
+/* Temp HP: a quiet inline field that lights up when it holds a value */
+.hp-temp {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-075);
+  margin-left: var(--sp-2);
+  color: var(--text-3);
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  cursor: text;
+}
+.hp-temp input {
+  width: 3ch;
+  border: none;
+  border-bottom: 1px dashed var(--border-mid);
+  background: transparent;
+  color: var(--text-2);
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  text-align: center;
+  padding: 0;
+  outline: none;
+}
+.hp-temp input:focus {
+  border-bottom-color: var(--cyan-400);
+}
+.hp-temp.has-temp {
+  color: var(--cyan-400);
+}
+.hp-temp.has-temp input {
+  color: var(--cyan-400);
+  border-bottom-color: var(--cyan-400);
+}
+
+.hp-adjust {
+  display: flex;
+  gap: var(--sp-1);
+  align-items: stretch;
+}
+.hp-adjust input {
+  flex: 1;
+  min-width: 0;
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border-mid);
+  background: var(--bg-2);
+  color: var(--text-0);
+  text-align: center;
+  font-weight: 600;
+  outline: none;
+  transition: border-color var(--dur-fast);
+}
+.hp-adjust input:focus {
+  border-color: var(--red-300);
+}
+.hp-adjust input::placeholder {
+  color: var(--text-3);
+  font-weight: 400;
+}
+.hp-adjust-btns {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 0.8fr;
+  gap: var(--sp-1);
+  margin-top: var(--sp-1);
+}
+.hp-adj-btn {
+  min-height: var(--touch-target);
+  padding: 0 var(--sp-2);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border-mid);
+  background: var(--bg-3);
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  letter-spacing: 0.02em;
+  transition:
+    background var(--dur-fast),
+    border-color var(--dur-fast),
+    color var(--dur-fast);
+}
+.hp-adj-btn:focus-visible {
+  outline: var(--focus-ring) solid var(--red-300);
+  outline-offset: var(--focus-ring);
+}
+.hp-adj-btn--dmg {
+  border-color: var(--red-700);
+  color: var(--red-200);
+}
+.hp-adj-btn--dmg:hover {
+  background: var(--red-900);
+  border-color: var(--red-500);
+}
+.hp-adj-btn--heal {
+  border-color: var(--green-500);
+  color: var(--green-300);
+}
+.hp-adj-btn--heal:hover {
+  background: var(--green-glow-soft);
+}
+.hp-adj-btn--temp {
+  border-color: var(--cyan-400);
+  color: var(--cyan-400);
+}
+.hp-adj-btn--temp:hover {
+  background: var(--cyan-glow-soft);
+}
+
+.crit-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 0 var(--sp-2);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--red-700);
+  color: var(--red-200);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.crit-toggle input {
+  accent-color: var(--red-400);
+}
+.crit-toggle:has(input:checked) {
+  background: var(--red-900);
+  border-color: var(--red-300);
+}
+
+/* Persistent concentration save reminder (card + detail) */
+.conc-check {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-1) var(--sp-1) var(--sp-3);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--purple-300);
+  background: var(--purple-glow-soft);
+  color: var(--purple-300);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+.conc-check b {
+  color: var(--text-0);
+}
+.conc-check small {
+  color: var(--purple-300);
+}
+.conc-check > span {
+  flex: 1;
+}
+.conc-check-dismiss {
+  width: var(--icon-btn-sm);
+  height: var(--icon-btn-sm);
+  color: var(--purple-300);
+}
+
+/* AC + stats row */
+.card-vitals {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: stretch;
+}
+
+.ac-shield {
+  flex-shrink: 0;
+  width: var(--shield-w);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: var(--shield-tip);
+  position: relative;
+  isolation: isolate;
+  color: var(--text-0);
+}
+/* Heater shield: the shape is a mask, so its stroke and fill come from tokens.
+   ::before is the outline, ::after the fill inset by one hairline. */
+.ac-shield::before,
+.ac-shield::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  -webkit-mask: var(--shield-mask) no-repeat center / 100% 100%;
+  mask: var(--shield-mask) no-repeat center / 100% 100%;
+}
+.ac-shield::before {
+  inset: 0;
+  background: var(--shield-stroke);
+}
+.ac-shield::after {
+  inset: var(--border-accent);
+  background: var(--bg-1);
+}
+.card.is-current .ac-shield {
+  filter: var(--drop-red-soft);
+}
+.ac-shield .ac-label {
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  color: var(--text-3);
+  text-transform: uppercase;
+}
+.ac-shield .ac-value {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  color: var(--text-0);
+  line-height: 1;
+}
+
+.stats-row {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: var(--sp-075);
+}
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-1) 0;
+  border-radius: var(--r-sm);
+  background: var(--bg-1);
+  border: 1px solid var(--border-subtle);
+  cursor: help;
+  transition:
+    border-color var(--dur-fast),
+    background var(--dur-fast);
+}
+.stat:hover {
+  border-color: var(--border-mid);
+  background: var(--bg-3);
+}
+.stat-label {
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+}
+.stat-mod {
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  color: var(--text-0);
+  line-height: 1.2;
+}
+.stat-mod.is-pos {
+  color: var(--green-300);
+}
+.stat-mod.is-neg {
+  color: var(--red-200);
+}
+
+/* Spell slots */
+.spell-block {
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--bg-1);
+  border: 1px solid var(--border-subtle);
+}
+.spell-block-title {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--blue-400);
+  margin-bottom: var(--sp-2);
+}
+.spell-rows-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.spell-row-card {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.spell-level {
+  width: var(--spell-level-w);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--text-2);
+  letter-spacing: 0.04em;
+}
+.spell-recovery {
+  color: var(--blue-300);
+  text-decoration: none;
+  cursor: help;
+}
+.spell-pips {
+  display: flex;
+  gap: var(--sp-1);
+  flex: 1;
+  flex-wrap: wrap;
+}
+.pip {
+  width: var(--pip-size);
+  height: var(--pip-size);
+  border-radius: var(--r-round);
+  border: 1px solid var(--blue-400);
+  background: transparent;
+  padding: 0;
+  transition:
+    background var(--dur-fast),
+    box-shadow var(--dur-fast),
+    transform var(--dur-fast);
+}
+.pip.is-full {
+  background: var(--blue-400);
+  box-shadow: var(--glow-blue-sm);
+}
+.pip:hover {
+  transform: scale(1.2);
+}
+.spell-count {
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+  min-width: var(--count-w);
+  text-align: right;
+}
+
+/* ---------- Library ---------- */
+.library-columns {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+}
+.library-col-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-4);
+  padding-bottom: var(--sp-3);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.library-col-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  letter-spacing: var(--tracking-display);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.library-col-title::before {
+  content: "";
+  width: var(--swatch);
+  height: var(--swatch);
+  border-radius: var(--r-xs);
+  transform: rotate(45deg);
+}
+.library-col-title--pc::before {
+  background: var(--text-0);
+  box-shadow: var(--glow-white-sm);
+}
+.library-col-title--enemy::before {
+  background: var(--red-300);
+  box-shadow: var(--glow-red-sm);
+}
+
+.library-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.lib-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-subtle);
+  border-left-width: var(--border-bar);
+  background: var(--bg-2);
+  transition:
+    border-color var(--dur-fast),
+    background var(--dur-fast),
+    transform var(--dur-med) var(--ease-out);
+}
+.lib-row:hover {
+  background: var(--bg-3);
+  transform: translateX(2px);
+}
+.lib-row--pc {
+  border-left-color: var(--border-light);
+}
+.lib-row--enemy {
+  border-left-color: var(--red-500);
+}
+.lib-row--pc:hover {
+  border-color: var(--border-light);
+}
+.lib-row--enemy:hover {
+  border-color: var(--red-500);
+}
+
+.lib-name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-md);
+}
+.lib-meta {
+  display: flex;
+  gap: var(--sp-3);
+  margin-top: var(--sp-05);
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+}
+.lib-meta {
+  flex-wrap: wrap;
+  row-gap: var(--sp-05);
+}
+.lib-meta > span {
+  white-space: nowrap;
+}
+.lib-meta > .lib-abilities {
+  white-space: normal;
+}
+.lib-meta span b {
+  color: var(--text-1);
+  font-weight: 600;
+}
+.lib-actions {
+  display: flex;
+  gap: var(--sp-05);
+}
+
+/* ---------- Modals ---------- */
+.modal {
+  width: min(var(--modal-w), 92vw);
+  padding: 0;
+  border: 1px solid var(--red-600);
+  border-radius: var(--r-xl);
+  background: linear-gradient(170deg, var(--bg-3), var(--bg-2) 50%);
+  color: var(--text-0);
+  box-shadow: var(--shadow-modal);
+  overflow: visible;
+}
+.modal-sm {
+  width: min(var(--modal-w-sm), 92vw);
+}
+.modal-danger {
+  border-color: var(--red-400);
+}
+
+.modal::backdrop {
+  background: var(--bg-backdrop);
+  backdrop-filter: var(--blur-backdrop);
+}
+.modal[open] {
+  animation: modalIn var(--dur-med) var(--ease-out);
+}
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-4) var(--sp-5);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.modal-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  letter-spacing: var(--tracking-display);
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-5);
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.modal-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+  padding: var(--sp-4) var(--sp-5);
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-sunken);
+  border-radius: 0 0 var(--r-xl) var(--r-xl);
+}
+.modal-foot--split {
+  justify-content: space-between;
+}
+.modal-foot--split > div {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.confirm-text {
+  color: var(--text-1);
+}
+.confirm-text strong {
+  color: var(--text-0);
+}
+
+/* Form fields */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  flex: 1;
+  min-width: 0;
+}
+.field-wide {
+  width: 100%;
+}
+.field-row {
+  display: flex;
+  gap: var(--sp-3);
+}
+.field-label {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.field input,
+.field select,
+.stat-input input {
+  width: 100%;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-mid);
+  background: var(--bg-1);
+  color: var(--text-0);
+  outline: none;
+  transition:
+    border-color var(--dur-fast),
+    box-shadow var(--dur-fast);
+}
+.field input:focus,
+.field select:focus,
+.stat-input input:focus {
+  border-color: var(--red-300);
+  box-shadow: var(--shadow-focus);
+}
+.field input:invalid:not(:placeholder-shown) {
+  border-color: var(--red-400);
+}
+.field select {
+  cursor: pointer;
+}
+
+.stats-fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.stats-fieldset legend {
+  padding: 0;
+  margin-bottom: var(--sp-1);
+}
+.stats-inputs {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: var(--sp-2);
+}
+.stat-input {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-1);
+}
+.stat-input span {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-2);
+}
+.stat-input input {
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-md);
+}
+
+.spell-details {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--bg-sunken);
+}
+.spell-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.spell-summary::-webkit-details-marker {
+  display: none;
+}
+.spell-summary::before {
+  content: "▸";
+  color: var(--blue-400);
+  font-size: var(--fs-sm);
+  transition: transform var(--dur-fast);
+}
+.spell-details[open] .spell-summary::before {
+  transform: rotate(90deg);
+}
+.spell-summary-hint {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+.spell-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin: var(--sp-3) 0;
+}
+.spell-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1.4fr auto;
+  gap: var(--sp-2);
+  align-items: end;
+}
+.spell-row .field input {
+  padding: var(--sp-1) var(--sp-2);
+}
+
+.checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--text-1);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+.checkbox-field input {
+  accent-color: var(--red-400);
+  width: var(--check-size);
+  height: var(--check-size);
+}
+
+.picker-empty {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+/* ---------- Tracker extras: lair button, clock, difficulty ---------- */
+.btn-outline-gold {
+  background: transparent;
+  border-color: var(--gold-500);
+  color: var(--gold-400);
+}
+.btn-outline-gold:hover {
+  background: var(--gold-wash);
+  box-shadow: var(--glow-gold-lg);
+}
+
+.clock {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-top: var(--sp-2);
+  padding: var(--sp-05) var(--sp-1) var(--sp-05) var(--sp-3);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-1);
+}
+.clock-label {
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.clock-time {
+  min-width: 5ch;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-md);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-2);
+  text-align: center;
+}
+.clock.is-running .clock-time {
+  color: var(--text-0);
+}
+.clock.is-running {
+  border-color: var(--border-mid);
+}
+.clock-btn {
+  width: var(--icon-btn-sm);
+  height: var(--icon-btn-sm);
+}
+
+.difficulty {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-3);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border-mid);
+  background: var(--bg-2);
+  color: var(--text-1);
+  font: inherit;
+  font-size: var(--fs-xs);
+  cursor: pointer;
+  transition:
+    background var(--dur-fast),
+    border-color var(--dur-fast),
+    transform var(--dur-fast);
+}
+.difficulty:hover {
+  background: var(--bg-3);
+  border-color: var(--text-3);
+}
+.difficulty:active {
+  transform: scale(0.96);
+}
+.difficulty:focus-visible {
+  outline: var(--focus-ring) solid var(--red-300);
+  outline-offset: var(--focus-ring);
+}
+/* Quick flash on click */
+.difficulty.is-clicked {
+  animation: difficultyClick 0.35s var(--ease-out);
+}
+@keyframes difficultyClick {
+  0% {
+    box-shadow: 0 0 0 0 var(--red-glow);
+  }
+  100% {
+    box-shadow: 0 0 0 10px transparent;
+  }
+}
+.difficulty b {
+  color: var(--text-0);
+}
+.difficulty-label {
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.difficulty-tier {
+  font-weight: 700;
+}
+.difficulty--under .difficulty-tier {
+  color: var(--green-300);
+}
+.difficulty--approaching {
+  border-color: var(--amber-500);
+}
+.difficulty--approaching .difficulty-tier {
+  color: var(--amber-300);
+}
+.difficulty--over {
+  border-color: var(--red-400);
+  box-shadow: var(--glow-red-soft);
+}
+.difficulty--over .difficulty-tier,
+.difficulty-warn {
+  color: var(--red-200);
+}
+
+/* ---------- Card additions ---------- */
+.card-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+  margin-top: calc(var(--sp-1) * -1);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-05) var(--sp-2);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border-mid);
+  background: var(--bg-1);
+  color: var(--text-1);
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+}
+.chip small {
+  font-size: var(--fs-2xs);
+  color: var(--text-3);
+}
+.chip--cond,
+.chip--exh {
+  border-color: var(--amber-500);
+  background: var(--amber-glow-soft);
+  color: var(--amber-300);
+}
+.chip--conc {
+  border-color: var(--purple-300);
+  background: var(--purple-glow-soft);
+  color: var(--purple-300);
+}
+button.chip {
+  cursor: pointer;
+  transition:
+    background var(--dur-fast),
+    border-color var(--dur-fast),
+    color var(--dur-fast);
+}
+.chip--recharge.is-ready {
+  border-color: var(--gold-500);
+  color: var(--gold-400);
+}
+.chip--recharge.is-spent {
+  border-style: dashed;
+  color: var(--text-3);
+  text-decoration: line-through;
+}
+.chip--toggle:hover {
+  border-color: var(--border-light);
+  color: var(--text-0);
+}
+.chip--toggle.is-on {
+  border-color: var(--amber-500);
+  background: var(--amber-glow-soft);
+  color: var(--amber-300);
+}
+.chip--conc-toggle.is-on {
+  border-color: var(--purple-300);
+  background: var(--purple-glow-soft);
+  color: var(--purple-300);
+}
+
+.card-info {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sp-1) var(--sp-4);
+  color: var(--text-1);
+  font-size: var(--fs-xs);
+}
+.card-info b,
+.card-skills::before {
+  color: var(--text-3);
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  font-size: var(--fs-2xs);
+  margin-right: var(--sp-075);
+}
+.card-skills {
+  color: var(--text-1);
+  font-size: var(--fs-xs);
+}
+.card-skills::before {
+  content: "Skills";
+}
+
+.card-attacks {
+  display: flex;
+  flex-direction: column;
+  /* Only as wide as the longest attack; every attack's background matches it */
+  width: fit-content;
+  max-width: 100%;
+  gap: var(--sp-075);
+}
+.attack {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: baseline;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--r-sm);
+  background: var(--bg-1);
+  border: 1px solid var(--border-subtle);
+  font-size: var(--fs-sm);
+}
+.attack-name {
+  font-weight: 600;
+  color: var(--text-0);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.attack-hit {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--red-200);
+}
+.attack-dmg {
+  color: var(--text-1);
+  text-align: right;
+}
+
+.card-recharges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+}
+
+/* Death saves (card + detail) */
+.death-saves {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  border: 1px solid var(--red-800);
+  background: var(--bg-1);
+}
+.ds-label {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+.ds-group {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+.ds-kind {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+.ds-kind--success {
+  color: var(--green-300);
+}
+.ds-kind--fail {
+  color: var(--red-200);
+}
+.pip--success {
+  border-color: var(--green-500);
+}
+.pip--success.is-full {
+  background: var(--green-500);
+  box-shadow: var(--glow-green-sm);
+}
+.pip--fail {
+  border-color: var(--red-400);
+}
+.pip--fail.is-full {
+  background: var(--red-400);
+  box-shadow: var(--glow-red-sm);
+}
+.ds-status {
+  margin-left: auto;
+  padding: var(--sp-px) var(--sp-2);
+  border-radius: var(--r-pill);
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+}
+.ds-status--stable {
+  background: var(--green-glow-soft);
+  color: var(--green-300);
+}
+.ds-status--dead {
+  background: var(--red-900);
+  color: var(--red-200);
+}
+
+/* Lair action card */
+.card--lair {
+  border-color: var(--gold-500);
+  border-style: dashed;
+}
+.card--lair .card-type {
+  color: var(--gold-400);
+}
+.card--lair.is-current {
+  border-style: solid;
+  border-color: var(--gold-400);
+  box-shadow: var(--shadow-turn-lair), var(--shadow-card);
+  background: linear-gradient(170deg, var(--bg-3) 0%, var(--bg-2) 70%);
+  animation: none;
+}
+.lair-notes {
+  color: var(--text-1);
+  font-size: var(--fs-sm);
+  white-space: pre-line;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.lair-notes.is-empty {
+  color: var(--text-3);
+  font-style: italic;
+}
+
+/* ---------- Builder additions ---------- */
+#creature-modal {
+  width: min(var(--modal-w-md), 94vw);
+}
+.field--grow {
+  flex: 3;
+}
+.stat-input-mod {
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--text-1);
+}
+.stat-input-mod.is-pos {
+  color: var(--green-300);
+}
+.stat-input-mod.is-neg {
+  color: var(--red-200);
+}
+
+.skill-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-05) var(--sp-3);
+  margin-top: var(--sp-3);
+}
+.skill-check {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-075) var(--sp-1);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+  cursor: pointer;
+}
+.skill-check:hover {
+  background: var(--bg-3);
+}
+.skill-check input {
+  accent-color: var(--red-400);
+}
+.skill-name {
+  flex: 1;
+}
+.skill-name small {
+  color: var(--text-3);
+  font-size: var(--fs-2xs);
+}
+.skill-bonus {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--text-3);
+}
+.skill-check:has(input:checked) {
+  color: var(--text-0);
+}
+.skill-check:has(input:checked) .skill-bonus {
+  color: var(--text-0);
+}
+
+.attack-row,
+.recharge-row {
+  display: grid;
+  gap: var(--sp-2);
+  align-items: end;
+}
+.attack-row {
+  grid-template-columns: 2fr 0.9fr 0.8fr 0.9fr 0.8fr 1.3fr auto;
+}
+.recharge-row {
+  grid-template-columns: 3fr 1fr auto;
+}
+.attack-row .field input,
+.attack-row .field select,
+.recharge-row .field input,
+.recharge-row .field select {
+  padding: var(--sp-1) var(--sp-2);
+}
+.field input.is-auto {
+  color: var(--text-2);
+  font-style: italic;
+}
+
+.field textarea {
+  width: 100%;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-mid);
+  background: var(--bg-1);
+  color: var(--text-0);
+  font: inherit;
+  line-height: var(--lh-normal);
+  resize: vertical;
+  outline: none;
+  transition:
+    border-color var(--dur-fast),
+    box-shadow var(--dur-fast);
+}
+.field textarea:focus {
+  border-color: var(--red-300);
+  box-shadow: var(--shadow-focus);
+}
+
+/* ---------- Detail modal ---------- */
+.modal-lg {
+  width: min(var(--modal-w-lg), 94vw);
+}
+.detail-subtitle {
+  display: block;
+  margin-top: var(--sp-05);
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+}
+.detail-body {
+  max-height: 74vh;
+}
+
+.detail-summary {
+  display: grid;
+  /* AC · HP · Speed · Initiative · CR/Init bonus. Speed gets room for "40 ft., fly 80 ft." */
+  grid-template-columns: 1fr 1.2fr 2fr 1fr 1fr;
+  gap: var(--sp-2);
+}
+.detail-stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-05);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-1);
+}
+.detail-stat-label {
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.detail-stat-value {
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  font-weight: 700;
+}
+.detail-stat-value small {
+  font-family: var(--font-body);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  color: var(--text-2);
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-5);
+  align-items: start;
+}
+.detail-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+/* Skills / attacks / spell slots: one full-width column, or side by side when there are several */
+.detail-extras {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(var(--detail-extra-min), 1fr));
+  gap: var(--sp-5);
+  align-items: start;
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--border-subtle);
+}
+.detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.detail-section > .btn {
+  align-self: flex-start;
+}
+.detail-section .ds-label {
+  display: none; /* the section title already says it */
+}
+.detail-section-title {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--gold-400);
+}
+.detail-text {
+  color: var(--text-1);
+  font-size: var(--fs-sm);
+}
+.detail-hint,
+.detail-empty {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+
+.detail-abilities {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: var(--sp-2);
+}
+.detail-ability {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--sp-1) 0;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-1);
+}
+.detail-ability-score {
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  line-height: 1.2;
+}
+.detail-ability-mod {
+  font-size: var(--fs-xs);
+  color: var(--text-2);
+}
+
+.chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+}
+.chip-grid .chip {
+  padding: var(--sp-075) var(--sp-3);
+  font-size: var(--fs-xs);
+}
+
+.exhaustion {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-top: var(--sp-1);
+}
+.exhaustion .field-label {
+  margin-right: var(--sp-2);
+}
+.exhaustion-value {
+  min-width: 2ch;
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-lg);
+  color: var(--text-2);
+}
+.exhaustion-value.is-on {
+  color: var(--amber-300);
+}
+
+.effect-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  color: var(--text-1);
+  font-size: var(--fs-xs);
+}
+.effect-list b {
+  color: var(--amber-300);
+  margin-right: var(--sp-1);
+}
+.effect-list small {
+  color: var(--text-2);
+}
+/* Small - and + buttons to change how long a condition lasts */
+.effect-steps {
+  display: inline-flex;
+  gap: var(--sp-1);
+  margin-right: var(--sp-1);
+  vertical-align: middle;
+}
+.effect-steps .icon-btn {
+  width: 1.75rem;
+  height: 1.75rem;
+  min-width: 0;
+}
+
+.concentration {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.concentration .chip {
+  flex-shrink: 0;
+  padding: var(--sp-1) var(--sp-3);
+  font-size: var(--fs-xs);
+}
+.concentration input {
+  flex: 1;
+  min-width: 0;
+  padding: var(--sp-1) var(--sp-3);
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-mid);
+  background: var(--bg-1);
+  color: var(--text-0);
+  outline: none;
+}
+.concentration input:focus {
+  border-color: var(--purple-300);
+}
+
+.recharge-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-1);
+}
+.recharge-item.is-ready {
+  border-color: var(--gold-500);
+}
+.recharge-name {
+  flex: 1;
+  font-weight: 600;
+  font-size: var(--fs-sm);
+}
+.recharge-name small {
+  display: block;
+  font-weight: 500;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+.recharge-state {
+  font-size: var(--fs-xs);
+  color: var(--text-2);
+}
+.recharge-item.is-ready .recharge-state {
+  color: var(--gold-400);
+}
+
+/* ---------- Toasts ---------- */
+.toast-stack {
+  position: fixed;
+  right: var(--sp-5);
+  bottom: var(--sp-5);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  pointer-events: none;
+}
+.toast {
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-mid);
+  border-left: var(--border-bar) solid var(--red-300);
+  background: var(--bg-3);
+  color: var(--text-0);
+  font-size: var(--fs-sm);
+  box-shadow: var(--shadow-raised);
+  animation:
+    toastIn var(--dur-med) var(--ease-out),
+    toastOut var(--dur-med) var(--ease-in-out) var(--dur-toast) forwards;
+}
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes toastOut {
+  to {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+/* ---------- Tracker: grouped actions, XP ---------- */
+.tracker-actions {
+  flex-wrap: wrap;
+}
+/* Wide screens: add buttons left, the Cards/List toggle dead center, info right */
+@media (min-width: 1360px) {
+  .tracker-actions {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+  }
+}
+/* Hamburger button with a dropdown of the less-used actions */
+.tracker-menu-wrap {
+  position: relative;
+}
+.btn-menu {
+  display: inline-grid;
+  place-items: center;
+  padding: var(--sp-1) var(--sp-2);
+}
+.tracker-menu {
+  position: absolute;
+  top: calc(100% + var(--sp-2));
+  right: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  min-width: 12rem;
+  padding: var(--sp-2);
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-mid);
+  background: var(--bg-2);
+  box-shadow: var(--shadow-card);
+}
+.tracker-menu[hidden] {
+  display: none;
+}
+.tracker-menu .btn {
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+}
+.checkbox-field--sm {
+  font-size: var(--fs-xs);
+}
+.checkbox-field--sm input {
+  width: var(--pip-size);
+  height: var(--pip-size);
+}
+.btn.is-on {
+  border-color: var(--gold-500);
+  color: var(--gold-400);
+}
+
+/* ---------- Card: header controls ---------- */
+.card-name-btn {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: underline transparent;
+  text-underline-offset: var(--sp-075);
+  transition: text-decoration-color var(--dur-fast);
+}
+.card-name-btn:hover {
+  text-decoration-color: currentColor;
+}
+.card-name-btn:focus-visible,
+.chip:focus-visible,
+.pip:focus-visible,
+.choice-btn:focus-visible,
+.toast-action:focus-visible {
+  outline: var(--focus-ring) solid var(--red-300);
+  outline-offset: var(--focus-ring);
+}
+.card-initiative {
+  height: auto;
+  padding: var(--sp-1) 0;
+  gap: var(--sp-05);
+}
+
+/* ---------- Card: HP state text, damage type ---------- */
+.hp-state {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--green-300);
+}
+.hp-state--is-wounded {
+  color: var(--amber-300);
+}
+.hp-state--is-critical {
+  color: var(--red-200);
+}
+.hp-adjust select {
+  flex: 1.3;
+  min-width: 0;
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border-mid);
+  background: var(--bg-2);
+  color: var(--text-1);
+  font-size: var(--fs-xs);
+  cursor: pointer;
+}
+.hp-adjust select:focus {
+  outline: none;
+  border-color: var(--red-300);
+}
+
+/* ---------- Card: AC, action economy, legendary ---------- */
+.card-vitals-side {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--sp-2);
+}
+.card-economy {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+}
+.chip--econ {
+  border-color: var(--green-500);
+  color: var(--green-300);
+}
+.chip--econ.is-used {
+  border-style: dashed;
+  border-color: var(--border-mid);
+  color: var(--text-2);
+  text-decoration: line-through;
+}
+.chip--econ:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+.chip--surprised.is-on {
+  border-color: var(--amber-500);
+  background: var(--amber-glow-soft);
+  color: var(--amber-300);
+}
+.legendary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1) var(--sp-3);
+}
+.legendary-group {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+.legendary-label {
+  color: var(--gold-400);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+}
+.legendary-pips {
+  display: inline-flex;
+  gap: var(--sp-1);
+}
+.legendary .pip {
+  border-color: var(--gold-500);
+}
+.legendary .pip.is-full {
+  background: var(--gold-500);
+  box-shadow: var(--glow-gold-sm);
+}
+
+/* ---------- Card: notes, collapsible stats, attacks ---------- */
+.card-notes {
+  padding-left: var(--sp-2);
+  border-left: var(--border-accent) solid var(--gold-500);
+  color: var(--text-1);
+  font-size: var(--fs-xs);
+  font-style: italic;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.card-more {
+  border-top: 1px solid var(--border-subtle);
+  padding-top: var(--sp-2);
+}
+.card-more-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.card-more-summary::-webkit-details-marker {
+  display: none;
+}
+.card-more-summary::before {
+  content: "▸";
+  color: var(--gold-500);
+  transition: transform var(--dur-fast);
+}
+.card-more[open] > .card-more-summary::before {
+  transform: rotate(90deg);
+}
+.card-more-summary:hover {
+  color: var(--text-0);
+}
+.card-more-summary:focus-visible {
+  outline: var(--focus-ring) solid var(--red-300);
+  outline-offset: var(--focus-ring);
+  border-radius: var(--r-sm);
+}
+.card-more-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+}
+.card-multiattack {
+  color: var(--text-1);
+  font-size: var(--fs-xs);
+  font-style: italic;
+}
+/* Attack line: name, To Hit and Damage sit together (wrapping on narrow cards) */
+.attack {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: flex-start;
+  column-gap: var(--sp-3);
+}
+.attack {
+  max-width: 100%;
+}
+.attack-name {
+  flex: 0 1 auto;
+  max-width: 100%;
+}
+.attack-dmg {
+  text-align: left;
+}
+/* "To Hit:", "Damage:" and "Save:" labels on the attack line */
+.attack-label {
+  color: var(--text-2);
+  font-family: var(--font-body);
+  font-weight: 600;
+}
+.attack-save {
+  color: var(--amber-300);
+  font-weight: 700;
+}
+.attack-note {
+  grid-column: 1 / -1;
+  color: var(--text-2);
+}
+
+/* ---------- Combat log drawer ---------- */
+.log-drawer {
+  position: fixed;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  border: 1px solid var(--border-mid);
+  border-radius: var(--r-lg);
+  background: linear-gradient(170deg, var(--bg-3), var(--bg-2) 60%);
+  box-shadow: var(--shadow-raised);
+}
+.log-drawer[hidden] {
+  display: none;
+}
+.log-drawer {
+  top: calc(var(--topbar-h) + var(--sp-4));
+  right: var(--sp-4);
+  bottom: var(--sp-4);
+  width: min(var(--drawer-w), calc(100vw - var(--sp-6)));
+  animation: drawerIn var(--dur-med) var(--ease-out);
+}
+@keyframes drawerIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.drawer-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.drawer-title {
+  flex: 1;
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  letter-spacing: var(--tracking-display);
+  color: var(--gold-400);
+}
+.log-list {
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.log-entry {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-2);
+  border-left: var(--border-accent) solid var(--border-mid);
+  border-radius: var(--r-sm);
+  background: var(--bg-1);
+  color: var(--text-1);
+  font-size: var(--fs-xs);
+}
+.log-round {
+  color: var(--text-2);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.log-entry--damage,
+.log-entry--death {
+  border-left-color: var(--red-300);
+}
+.log-entry--heal {
+  border-left-color: var(--green-500);
+}
+.log-entry--condition {
+  border-left-color: var(--amber-500);
+}
+.log-entry--concentration {
+  border-left-color: var(--purple-300);
+}
+.log-entry--turn {
+  border-left-color: var(--gold-500);
+  color: var(--text-0);
+  font-weight: 600;
+}
+.log-entry--roll,
+.log-entry--recharge {
+  border-left-color: var(--blue-400);
+}
+.log-empty {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+/* ---------- Choice dialog, confirm lists, action toasts ---------- */
+.choice-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.choice-btn {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: var(--touch-target);
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--border-mid);
+  border-radius: var(--r-md);
+  background: var(--bg-1);
+  text-align: left;
+  transition:
+    background var(--dur-fast),
+    border-color var(--dur-fast);
+}
+.choice-btn:hover {
+  background: var(--bg-3);
+  border-color: var(--red-400);
+}
+.choice-btn small {
+  color: var(--text-2);
+}
+.confirm-text p + p,
+.confirm-text p + ul,
+.confirm-text ul + p {
+  margin-top: var(--sp-2);
+}
+.confirm-list {
+  margin: 0;
+  padding-left: var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  font-size: var(--fs-sm);
+}
+.toast {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+.toast--action {
+  pointer-events: auto;
+  animation:
+    toastIn var(--dur-med) var(--ease-out),
+    toastOut var(--dur-med) var(--ease-in-out) var(--dur-toast-action) forwards;
+}
+.toast-action {
+  padding: var(--sp-1) var(--sp-3);
+  border: 1px solid var(--gold-500);
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--gold-400);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+.toast-action:hover {
+  background: var(--bg-4);
+}
+
+/* ---------- Builder additions ---------- */
+.save-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-05) var(--sp-3);
+  margin-top: var(--sp-3);
+}
+.skill-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  cursor: pointer;
+}
+.skill-exp {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-05);
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  cursor: pointer;
+}
+.skill-exp input {
+  accent-color: var(--gold-500);
+}
+.skill-check:has(input[data-expertise]:checked) .skill-exp {
+  color: var(--gold-400);
+}
+.def-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  margin-top: var(--sp-3);
+}
+.check-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+}
+.check-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-05) var(--sp-2);
+  border: 1px solid var(--border-mid);
+  border-radius: var(--r-pill);
+  color: var(--text-1);
+  font-size: var(--fs-xs);
+  cursor: pointer;
+}
+.check-chip input {
+  accent-color: var(--red-400);
+}
+.check-chip:has(input:checked) {
+  border-color: var(--amber-500);
+  background: var(--amber-glow-soft);
+  color: var(--amber-300);
+}
+.attack-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  padding: var(--sp-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+}
+.attack-row .field {
+  flex: 1 1 5rem;
+}
+.attack-row .atk-name,
+.attack-row .atk-note {
+  flex: 3 1 9rem;
+}
+.attack-row .atk-kind {
+  flex: 2 1 7rem;
+}
+.attack-row .atk-half {
+  flex: 0 0 auto;
+  padding-bottom: var(--sp-2);
+}
+.attack-row[data-kind="attack"] .atk-save-only,
+.attack-row[data-kind="save"] .atk-attack-only {
+  display: none;
+}
+#creature-form textarea {
+  font-size: var(--fs-sm);
+}
+
+/* ---------- Detail additions ---------- */
+.detail-summary {
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+}
+.detail-ability-save {
+  font-size: var(--fs-xs);
+  color: var(--text-2);
+}
+.detail-ability.is-save-prof {
+  border-color: var(--gold-500);
+}
+.detail-ability.is-save-prof .detail-ability-save {
+  color: var(--gold-400);
+  font-weight: 700;
+}
+.detail-statlines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.detail-text b {
+  color: var(--text-0);
+  margin-right: var(--sp-1);
+}
+.detail-text--italic {
+  font-style: italic;
+}
+.detail-prose {
+  color: var(--text-1);
+  font-size: var(--fs-sm);
+  white-space: pre-line;
+}
+.duration-field {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--text-1);
+  font-size: var(--fs-xs);
+}
+.duration-field input {
+  width: 4.5rem;
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border-mid);
+  background: var(--bg-1);
+  color: var(--text-0);
+  text-align: center;
+}
+.duration-field input:focus {
+  outline: none;
+  border-color: var(--amber-500);
+}
+.chip--toggle.is-immune {
+  border-style: dashed;
+  color: var(--text-2);
+}
+.effect-list small {
+  color: var(--amber-300);
+}
+
+/* ---------- Utilities ---------- */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: calc(var(--sp-px) * -1);
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.empty-state--wide {
+  grid-column: 1 / -1;
+}
+
+/* ---------- Topbar tools, segmented control, shortcuts ---------- */
+.topbar-tools {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.icon-btn:focus-visible,
+.library-col-toggle:focus-visible,
+.tab:focus-visible,
+.segmented button:focus-visible,
+.check-chip:focus-within,
+.skill-check:focus-within,
+.crit-toggle:focus-within {
+  outline: var(--focus-ring) solid var(--red-300);
+  outline-offset: var(--focus-ring);
+}
+.segmented {
+  display: inline-flex;
+  padding: var(--sp-05);
+  border: 1px solid var(--border-mid);
+  border-radius: var(--r-md);
+  background: var(--bg-1);
+}
+.segmented button {
+  padding: var(--sp-1) var(--sp-3);
+  border: none;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  transition:
+    background var(--dur-fast),
+    color var(--dur-fast);
+}
+.segmented button:hover {
+  color: var(--text-0);
+}
+.segmented button[aria-pressed="true"] {
+  background: var(--bg-4);
+  color: var(--text-0);
+  box-shadow: var(--shadow-inset);
+}
+.shortcut-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+}
+.shortcut-table th,
+.shortcut-table td {
+  padding: var(--sp-1) var(--sp-2);
+  border-bottom: 1px solid var(--border-subtle);
+  text-align: left;
+  vertical-align: top;
+}
+.shortcut-table th {
+  white-space: nowrap;
+  font-weight: 500;
+}
+.shortcut-table td {
+  color: var(--text-1);
+}
+kbd {
+  display: inline-block;
+  min-width: var(--icon-btn-sm);
+  padding: 0 var(--sp-1);
+  border: 1px solid var(--border-mid);
+  border-bottom-width: var(--border-accent);
+  border-radius: var(--r-sm);
+  background: var(--bg-1);
+  color: var(--text-0);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  text-align: center;
+}
+
+/* Number spinners come back for the amount box only. Initiative is typed in
+   from physical dice, so it has none. Everywhere else they're hidden (see top). */
+.hp-adjust input[type="number"] {
+  -moz-appearance: number-input;
+  appearance: auto;
+}
+.hp-adjust input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: inner-spin-button;
+  opacity: 1;
+}
+.card-initiative input[type="number"] {
+  font-size: var(--fs-lg);
+}
+
+/* ---------- List combat view (cardMode "compact") ----------
+   One row per combatant so 10+ fit at 1440px without sideways scrolling:
+   name | HP and controls | AC, actions, legendary | conditions. */
+.card-grid.is-compact {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-2);
+}
+/* Resizing is a Cards-view feature: list rows ignore saved sizes */
+.card-grid.is-compact > .card,
+.card-grid.is-compact .group-box > .card {
+  width: auto !important;
+  height: auto !important;
+  max-width: none;
+  overflow: visible;
+}
+.is-compact .card-resize {
+  display: none;
+}
+.is-compact .card {
+  display: grid;
+  grid-template-columns:
+    minmax(16rem, 2.4fr) minmax(22rem, 1.5fr) minmax(14rem, 2.7fr)
+    fit-content(16rem);
+  align-items: center;
+  gap: var(--sp-1) var(--sp-4);
+  /* The right edge is kept free for the tool buttons in the top corner */
+  position: relative;
+  padding: var(--sp-2) 10rem var(--sp-2) var(--sp-3);
+}
+.is-compact .card > *,
+.is-compact .card > .fit-group > * {
+  min-width: 0;
+}
+.is-compact .card.is-current {
+  transform: none;
+}
+/* The head, HP block and action buttons all sit in the first row, centered, with "Stats" in a row of its
+   own below: opening "Stats" never moves them, and the quick info cannot run into the Stats line */
+.is-compact .card-head {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.is-compact .card-title-wrap {
+  flex: 1 1 14rem;
+}
+/* Expand, hide, save, edit and remove sit in the top right corner of the row */
+.is-compact .card-tools {
+  position: absolute;
+  width: max-content;
+  top: var(--sp-2);
+  right: var(--sp-3);
+}
+.is-compact .card-initiative {
+  width: 5.75rem;
+  min-height: 0;
+  padding: var(--sp-05) var(--sp-1);
+}
+.is-compact .init-short {
+  display: none;
+}
+.is-compact .init-full {
+  display: inline;
+}
+/* Initiative is a plain text box in the list: no up/down arrows */
+.is-compact .card .card-initiative input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.is-compact .card .card-initiative input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+.is-compact .card-name-btn {
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+}
+
+.is-compact .hp-block {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-1) var(--sp-2);
+  padding: var(--sp-2);
+}
+.is-compact .hp-top,
+.is-compact .hp-bar {
+  flex: 1 1 100%;
+}
+.is-compact .hp-bar {
+  margin: 0;
+}
+.is-compact .hp-adjust {
+  flex: 1 1 10rem;
+  min-width: 0;
+}
+.is-compact .hp-adjust-btns {
+  flex: 1 1 12rem;
+  min-width: 0;
+  margin-top: 0;
+}
+.is-compact .card-vitals {
+  grid-column: 3;
+  grid-row: 1;
+}
+.is-compact .card-status,
+.is-compact .conc-check {
+  grid-column: 4;
+  margin-top: 0;
+}
+.is-compact .card-status {
+  grid-row: 1;
+}
+/* Action chips stretch to fill their cell; the conditions column only takes room when needed */
+.is-compact .card-economy .chip {
+  flex: 1 1 auto;
+  justify-content: center;
+}
+.is-compact .conc-check {
+  grid-row: 2;
+}
+.is-compact .death-saves {
+  grid-column: 2 / span 2;
+}
+.is-compact .card-more {
+  grid-column: 1;
+  grid-row: 2;
+  align-self: end;
+  border-top: none;
+  padding-top: 0;
+}
+.is-compact .card-more[open] {
+  grid-column: 1 / -1;
+  grid-row: auto;
+}
+.is-compact .card-notes,
+.is-compact .card-recharges,
+.is-compact .spell-block,
+.is-compact .card-down-tag {
+  display: none;
+}
+.is-compact .card--lair {
+  grid-template-columns: minmax(13rem, 1fr) 3fr;
+}
+.is-compact .card--lair .lair-notes {
+  grid-column: 2;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+/* Wide screens: name on the left, HP block in the middle of the row, AC and
+   action chips pushed to the right (conditions go under them). The two side
+   columns are equal, so the HP block sits at the center of every row. */
+@media (min-width: 1201px) {
+  .is-compact .card:not(.card--lair) {
+    grid-template-columns: 18rem minmax(0, 1fr) 18rem;
+    padding-right: var(--sp-3);
+  }
+  /* Centered in the first row, so they stay put when "Stats" opens below */
+  .is-compact .card-vitals {
+    grid-column: 3;
+    grid-row: 1;
+    align-self: center;
+    justify-self: end;
+  }
+  /* Conditions sit at the bottom edge, under the chips */
+  .is-compact .card-status,
+  .is-compact .conc-check {
+    grid-column: 3;
+    justify-self: end;
+    align-self: end;
+  }
+  .is-compact .card-status {
+    grid-row: 2;
+  }
+  .is-compact .conc-check {
+    grid-row: 3;
+  }
+}
+
+/* ---------- Saved indicator, settings, import ---------- */
+.saved-indicator {
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  white-space: nowrap;
+}
+.saved-indicator.is-error {
+  padding: var(--sp-05) var(--sp-2);
+  border-radius: var(--r-pill);
+  background: var(--red-900);
+  color: var(--red-200);
+  font-weight: 700;
+}
+.view-head-actions,
+.settings-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+.import-counts {
+  margin: 0;
+  padding-left: var(--sp-5);
+  color: var(--text-1);
+}
+.import-counts b {
+  color: var(--text-0);
+}
+.toast--sticky {
+  pointer-events: auto;
+  border-left-color: var(--amber-500);
+  animation: toastIn var(--dur-med) var(--ease-out);
+}
+
+/* ---------- Library toolbar ---------- */
+.library-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
+.library-filter .field {
+  flex: 0 1 10rem;
+}
+/* Sits on the same line as the fields, level with the inputs */
+.library-filter .btn {
+  align-self: flex-end;
+}
+.library-filter select,
+.library-panel input {
+  padding: var(--sp-1) var(--sp-3);
+}
+.library-panel {
+  margin-bottom: var(--sp-3);
+}
+.library-panel[hidden] {
+  display: none;
+}
+.library-col-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+/* PC list title doubles as the show/hide button */
+.library-col-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.collapse-caret {
+  width: 0;
+  height: 0;
+  border-left: 0.3rem solid transparent;
+  border-right: 0.3rem solid transparent;
+  border-top: 0.4rem solid var(--text-2);
+  transition: transform var(--dur-fast);
+}
+.library-col-toggle[aria-expanded="false"] .collapse-caret {
+  transform: rotate(-90deg);
+}
+/* Search and filter buttons use the PNGs in assets/. The icons are black
+   artwork, so invert them to white and let "screen" drop the dark background. */
+.icon-btn--img img {
+  width: 60%;
+  height: 60%;
+  object-fit: contain;
+  filter: invert(1) contrast(3);
+  mix-blend-mode: screen;
+  opacity: 0.7;
+}
+.icon-btn--img:hover img {
+  opacity: 1;
+}
+.icon-btn--img[aria-expanded="true"] {
+  background: var(--bg-3);
+  border-color: var(--red-500);
+}
+.icon-btn--img[aria-expanded="true"] img,
+.icon-btn--img.is-on img {
+  opacity: 1;
+}
+.empty-inline {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+/* ---------- Footer ---------- */
+.app-footer {
+  margin-top: var(--sp-8);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--border-subtle);
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  text-align: center;
+}
+.app-footer a {
+  color: var(--gold-400);
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1200px) {
+  .tracker-bar {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+  .tracker-controls {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .detail-summary {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .is-compact .card {
+    grid-template-columns: minmax(16rem, 1fr) minmax(18rem, 1.6fr);
+  }
+  .is-compact .card-vitals,
+  .is-compact .card-status,
+  .is-compact .conc-check,
+  .is-compact .death-saves {
+    grid-column: 1 / -1;
+    grid-row: auto;
+  }
+}
+
+@media (max-width: 900px) {
+  .topbar {
+    gap: var(--sp-3);
+    padding: 0 var(--sp-4);
+  }
+  .tabs {
+    overflow-x: auto;
+    scrollbar-width: none;
+    flex: 1;
+    min-width: 0;
+  }
+  .tab {
+    flex-shrink: 0;
+  }
+  .app {
+    padding: var(--sp-5) var(--sp-4) var(--sp-7);
+  }
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+  .skill-grid,
+  .save-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .attack-row .field {
+    flex-basis: 30%;
+  }
+  .attack-row .atk-name,
+  .attack-row .atk-note {
+    flex-basis: 60%;
+  }
+  .field-row {
+    flex-wrap: wrap;
+  }
+  .field-row > .field {
+    flex-basis: 40%;
+  }
+  .view-head {
+    flex-wrap: wrap;
+  }
+  .encounter-meta {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 600px) {
+  .brand-title {
+    display: none;
+  }
+  .modal,
+  .modal-sm,
+  .modal-lg,
+  #creature-modal {
+    width: 100vw;
+    max-width: 100vw;
+    max-height: 100dvh;
+    margin: 0;
+    border-radius: 0;
+  }
+  .modal-body {
+    max-height: calc(100dvh - 9rem);
+  }
+  .modal-foot {
+    border-radius: 0;
+  }
+  .detail-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .detail-abilities,
+  .stats-inputs {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .skill-grid,
+  .save-grid {
+    grid-template-columns: 1fr;
+  }
+  .spell-row {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+  .card-grid {
+    grid-template-columns: 1fr;
+  }
+  .is-compact .card {
+    grid-template-columns: 1fr;
+  }
+  .is-compact .card > *,
+  .is-compact .card > .fit-group > *,
+  .is-compact .card-more {
+    grid-column: 1 / -1;
+    grid-row: auto;
+  }
+  .tracker-actions {
+    gap: var(--sp-2);
+  }
+  .round-number {
+    font-size: var(--fs-3xl);
+  }
+  .log-drawer {
+    top: auto;
+    left: var(--sp-2);
+    right: var(--sp-2);
+    height: 60vh;
+    width: auto;
+  }
+  .toast-stack {
+    left: var(--sp-2);
+    right: var(--sp-2);
+  }
+}
+
+/* ---------- Scrollbars ---------- */
+::-webkit-scrollbar {
+  width: var(--scrollbar);
+  height: var(--scrollbar);
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-1);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--bg-4);
+  border-radius: var(--r-pill);
+  border: var(--border-accent) solid var(--bg-1);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--red-700);
+}
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Shown in the header while the password lock is off */
+.lock-badge {
+  color: var(--amber-300);
+  border-color: var(--amber-500);
+}
+#logout-form[hidden],
+.lock-badge[hidden] {
+  display: none;
+}
+
+/* Enemy hidden from the player display: dashed border, "Hidden" tag, eye button lit */
+.card.is-hidden {
+  border-style: dashed;
+}
+.card-hidden-tag {
+  margin-left: var(--sp-2);
+  padding: var(--sp-px) var(--sp-2);
+  border-radius: var(--r-pill);
+  border: 1px dashed var(--text-3);
+  color: var(--text-1);
+  font-size: var(--fs-2xs);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+/* The eye button of a hidden enemy (not the library's search and filter buttons, which also use is-on) */
+.icon-btn[data-action="toggle-hidden"].is-on {
+  color: var(--amber-300);
+  border-color: var(--amber-500);
+}
+
+/* Benchmark window */
+.benchmark-list {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--sp-2) var(--sp-4);
+  margin: var(--sp-3) 0;
+}
+.benchmark-list dt {
+  color: var(--text-2);
+}
+.benchmark-list dd {
+  margin: 0;
+  font-weight: 700;
+}
+.benchmark-list small {
+  color: var(--text-2);
+  font-weight: 400;
+}
+.benchmark-tier--under {
+  color: var(--green-300);
+}
+.benchmark-tier--approaching {
+  color: var(--amber-300);
+}
+.benchmark-tier--over {
+  color: var(--red-200);
+}
+.benchmark-hint {
+  color: var(--red-200);
+}
+
+/* Enemy group: a box around its cards, and the group dialog */
+.group-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+}
+.group-list small {
+  color: var(--text-2);
+}
+
+/* The box around a group: dashed outline in the group's colour, name and note on top */
+.group-box {
+  --group: var(--gold-400);
+  flex: 1 1 100%;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--sp-4);
+  padding: var(--sp-3);
+  border: 2px dashed var(--group);
+  border-radius: var(--r-lg);
+}
+.group-box[data-color="1"] {
+  --group: var(--cyan-400);
+}
+.group-box[data-color="2"] {
+  --group: var(--purple-300);
+}
+.group-box[data-color="3"] {
+  --group: var(--green-400);
+}
+.group-box[data-color="4"] {
+  --group: var(--blue-300);
+}
+.group-box-head {
+  flex: 1 1 100%;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-1) var(--sp-3);
+  color: var(--group);
+}
+.group-box-name {
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+}
+.group-box-note {
+  flex: 1 1 auto;
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+}
+.card-grid.is-compact .group-box {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-2);
+}
+
+/* The group's shared card spans the box; its enemies sit below as slim cards */
+.group-box > .card--group {
+  flex: 1 1 100%;
+  max-width: none;
+  border-color: var(--group);
+}
+.card--group .card-name b {
+  color: var(--group);
+}
+/* Tool buttons sit in the corner of the shared card, so keep that strip free */
+.is-compact .card.card--group {
+  padding-right: 10rem;
+}
+.is-compact .card--member {
+  padding-right: 3.5rem;
+}
+/* The group's shared card has no HP block beside it, so it is a single column: the head, then "Attacks & stats" under it */
+.is-compact .card.card--group:not(.card--lair) {
+  grid-template-columns: minmax(0, 1fr);
+}
+.is-compact .card--group .card-head {
+  grid-row: 1;
+  align-self: start;
+}
+.is-compact .card--group .card-more {
+  grid-row: 2;
+  align-self: start;
+}
+.is-compact .card--group .card-more[open] {
+  grid-column: 1 / -1;
+  grid-row: auto;
+}
+
+/* Minimized group: each enemy is one short row with its name, HP and the HP buttons */
+.group-box.is-min .card.card--member {
+  display: flex;
+  flex-direction: row;
+  flex: 1 1 100%;
+  max-width: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-1) 0;
+  padding: var(--sp-1) 3.5rem var(--sp-1) var(--sp-3);
+}
+/* The name column is only as wide as the name, so the pill sits right after it */
+.group-box.is-min .card--member .card-head {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 14rem;
+}
+.group-box.is-min .card--member .card-vitals,
+.group-box.is-min .card--member .card-type,
+.group-box.is-min .card--member .hp-state,
+.group-box.is-min .card--member .hp-label,
+.group-box.is-min .card--member .hp-temp,
+.group-box.is-min .card--member .card-down-tag {
+  display: none;
+}
+.group-box.is-min .card--member .hp-block {
+  flex: 1 1 22rem;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-2);
+}
+.group-box.is-min .card--member .hp-top {
+  flex: 0 0 auto;
+}
+.group-box.is-min .card--member .hp-bar {
+  flex: 1 1 6rem;
+  margin: 0;
+}
+.group-box.is-min .card--member .hp-adjust {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+/* Fixed widths, so this group takes only what it needs and the HP bar fills the rest of the row */
+.group-box.is-min .card--member .hp-adjust input {
+  flex: 0 0 auto;
+  width: 4.5rem;
+}
+.group-box.is-min .card--member .hp-adjust select {
+  flex: 0 0 auto;
+  width: 7.5rem;
+}
+.group-box.is-min .card--member .hp-adjust-btns {
+  flex: 0 0 auto;
+  margin: 0;
+}
+.group-box.is-min .card--member .card-status {
+  flex: 0 1 auto;
+  margin: 0;
+}
+.group-box.is-min .card--member .card-tools {
+  position: absolute;
+  top: 50%;
+  right: var(--sp-3);
+  transform: translateY(-50%);
+}
+.group-box.is-min .card--member {
+  position: relative;
+}
+
+/* An enemy in a group has no AC shield next to its action buttons, so the buttons set their own width */
+.card--member .card-vitals-side {
+  flex: 0 0 auto;
+}
+
+/* Wide screens: at most three cards per row, all the same width (also inside a group box) */
+@media (min-width: 1000px) {
+  .card-grid:not(.is-compact) > .card:not(.is-sized),
+  .group-box:not(.is-min) > .card--member {
+    flex: 0 0 calc((100% - 2 * var(--sp-4)) / 3);
+    max-width: none;
+  }
+}
+
+/* Status pill beside an enemy's name in a minimized group */
+.member-pill {
+  display: none;
+
+  padding: var(--sp-px) var(--sp-2);
+  border-radius: var(--r-pill);
+  border: 1px solid currentColor;
+  color: var(--green-300);
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.member-pill--is-wounded {
+  color: var(--amber-300);
+}
+.member-pill--is-critical {
+  color: var(--red-200);
+}
+/* The status pill sits in the space between the name and the HP block, centered in it */
+.member-status {
+  display: none;
+}
+.group-box.is-min .card--member .member-status {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: center;
+  /* 16px between the end of the name and the pill, and the same between the pill and the HP block */
+  padding: 0 16px;
+}
+.group-box.is-min .card--member .member-pill {
+  display: inline-block;
+}
+
+/* Narrower screens: the minimized row wraps (HP bar first, then the amount, type and buttons) */
+@media (max-width: 1200px) {
+  .group-box.is-min .card--member .hp-block {
+    flex-wrap: wrap;
+  }
+  .group-box.is-min .card--member .hp-bar {
+    flex: 1 1 8rem;
+  }
+}
+
+/* ---------- List view, ungrouped entries ----------
+   Left: the name and tags on top, then initiative and AC.
+   Middle: the HP box takes all the room left over: HP numbers, the bar on its own line,
+   then the amount, damage type and Damage / Heal / Temp buttons under it. */
+.member-pill--ok {
+  color: var(--green-300);
+}
+.is-compact .card:not(.card--member):not(.card--group):not(.card--lair) .card-head {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-3);
+}
+.is-compact .card:not(.card--member):not(.card--group):not(.card--lair) .card-title-wrap {
+  grid-row: 1;
+  grid-column: 1 / -1;
+}
+.is-compact .card:not(.card--member):not(.card--group):not(.card--lair) .card-initiative {
+  grid-row: 2;
+  grid-column: 1;
+}
+.is-compact .card:not(.card--member):not(.card--group):not(.card--lair) .card-head > .ac-shield {
+  grid-row: 2;
+  grid-column: 2;
+}
+/* The HP line reads: HP, the HP numbers, temp HP, and the health status as a pill at the top right */
+.is-compact .card:not(.card--member):not(.card--group) .hp-state {
+  order: 4;
+  margin-left: auto;
+  padding: var(--sp-px) var(--sp-2);
+  border: 1px solid currentColor;
+  border-radius: var(--r-pill);
+  font-size: var(--fs-2xs);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.is-compact .card:not(.card--member):not(.card--group) .hp-top {
+  gap: var(--sp-3);
+}
+/* Each HP number is only as wide as its digits, so "7 / 120" sits snug against the HP label */
+.is-compact .card:not(.card--member):not(.card--group) .hp-values {
+  gap: var(--sp-05);
+}
+.is-compact .card:not(.card--member):not(.card--group) .hp-values input {
+  width: calc((var(--digits, 2) + 1) * 1ch);
+}
+.is-compact .card:not(.card--member):not(.card--group) .hp-label {
+  order: 1;
+}
+.is-compact .card:not(.card--member):not(.card--group) .hp-values {
+  order: 2;
+  margin-left: 0;
+}
+.is-compact .card:not(.card--member):not(.card--group) .hp-top .hp-temp {
+  order: 3;
+  margin-left: 0;
+}
+.is-compact .card:not(.card--member):not(.card--group) .hp-bar {
+  flex: 1 1 100%;
+}
+.is-compact .card:not(.card--member):not(.card--group) .hp-adjust {
+  flex: 1 1 16rem;
+  flex-wrap: wrap;
+  margin: 0;
+}
+.is-compact .card:not(.card--member):not(.card--group) .hp-adjust input[type="number"] {
+  flex: 0 0 auto;
+  width: 4.5rem;
+}
+.is-compact .card:not(.card--member):not(.card--group) .hp-adjust select {
+  flex: 1 1 auto;
+  min-width: 5.5rem;
+}
+.is-compact .card:not(.card--member):not(.card--group) .crit-toggle {
+  flex: 0 0 auto;
+}
+.is-compact .card:not(.card--member):not(.card--group) .hp-adjust-btns {
+  flex: 1 1 14rem;
+  margin: 0;
+}

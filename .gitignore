@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+tests/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*~
+
+# Logs
+*.log
+
+# Saved DM data (library, encounters)
+saves/
+
+# Local secrets (DM password). Never commit.
+.env
+
+# Markdowns
+CLAUDE.md

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Player Display</title>
+    <!-- Shared stylesheet -->
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main id="player-main" class="player-view">
+      <!-- Round and whose turn it is -->
+      <header class="player-head">
+        <h1 class="player-round" id="round">Waiting for the DM…</h1>
+        <p class="player-sub" id="sub"></p>
+        <!-- Combat time (kept in step with the DM page) and the real time of day -->
+        <span class="player-clock" id="clock" hidden
+          >Combat: <span id="clock-time">00:00</span> (IRL:
+          <span id="clock-real"></span>)</span
+        >
+        <!-- Connection indicator, centered vertically at the right of this header -->
+        <div id="status" class="conn conn--checking" role="status">
+          <span class="conn-dot" aria-hidden="true"></span>
+          <span class="conn-label"
+            ><span id="status-text">Checking</span
+            ><span id="status-dots" class="conn-dots">.</span></span
+          >
+        </div>
+      </header>
+
+      <!-- Turn order, filled in by player.js -->
+      <ol id="order" class="player-list" aria-label="Turn order"></ol>
+    </main>
+
+    <!-- Page script -->
+    <script src="player.js"></script>
+  </body>
+</html>
