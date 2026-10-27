@@ -100,7 +100,6 @@
   const ICON_UNLOCK = svg(
     `<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/>`,
   );
-  const ICON_SAVE = svg(`<path d="M6 3h12v18l-6-4-6 4z"/>`);
 
   const escapeHtml = (str) =>
     String(str ?? "")
@@ -1435,7 +1434,7 @@
         ? ""
         : `
         <div class="card-initiative" title="${mode === "group" ? "Initiative (shared by the group)" : "Initiative"}">
-          <label class="card-initiative-label" for="${mode === "group" ? "g" : ""}init-${c.instanceId}"><span class="init-short">Init</span><span class="init-full">Initiative</span></label>
+          <label class="card-initiative-label" for="${mode === "group" ? "g" : ""}init-${c.instanceId}"><span class="init-short">Init</span><span class="init-full">${c.type === "lair" ? "Init" : `Init (${formatMod(initBonusOf(c))})`}</span></label>
           <input id="${mode === "group" ? "g" : ""}init-${c.instanceId}" type="number" value="${toInt(c.initiative, 0)}" data-field="initiative" aria-label="Initiative for ${escapeHtml(mode === "group" ? `the ${baseName(c.name)} group` : c.name)}">
         </div>${acBox}`;
     const expand =
@@ -1451,7 +1450,10 @@
     return `
       <header class="card-head">${initBox}
         <div class="card-title-wrap" data-fit="14">
-          <h3 class="card-name"><button class="card-name-btn" type="button" data-action="open-detail" title="Open details for ${escapeHtml(c.name)}">${mode === "group" ? groupName : escapeHtml(c.name)}</button></h3>
+          <div class="card-name-row">
+            <h3 class="card-name"><button class="card-name-btn" type="button" data-action="open-detail" title="Open details for ${escapeHtml(c.name)}">${mode === "group" ? groupName : escapeHtml(c.name)}</button></h3>
+            ${c.type === "pc" || (c.type === "enemy" && mode !== "member") ? `<span class="card-kind">${c.type === "pc" ? "PC" : "Enemy"}</span>` : ""}
+          </div>
           ${
             mode === "member"
               ? ""
@@ -1553,7 +1555,6 @@
 
     const info = [];
     // Speed lives in the quick info line under the name
-    info.push(`<span><b>Init</b> ${formatMod(initBonusOf(c))}</span>`);
     info.push(`<span><b>P. Perception</b> ${R.passivePerception(c)}</span>`);
     const skills = skillsText(c);
     const noteLine = (c.notes || "").split("\n").find((l) => l.trim()) || "";
@@ -1573,7 +1574,6 @@
                   aria-label="${c.hidden ? `Reveal ${escapeHtml(c.name)} to players` : `Hide ${escapeHtml(c.name)} from players`}">${c.hidden ? ICON_EYE_OFF : ICON_EYE}</button>`
               : ""
           }
-          <button class="icon-btn" type="button" data-action="save-to-library" title="Save to library" aria-label="Save ${escapeHtml(c.name)} to the library">${ICON_SAVE}</button>
           <button class="icon-btn" type="button" data-action="edit-instance" title="Edit stat block" aria-label="Edit ${escapeHtml(c.name)}">${ICON_EDIT}</button>`;
 
     // The action buttons (and legendary pips); AC is in the card head now
@@ -2413,6 +2413,10 @@
       "hidden",
       ctx.mode !== "encounter-new",
     );
+    $("#creature-save-library").classList.toggle(
+      "hidden",
+      ctx.mode !== "instance-edit",
+    );
     $("#creature-hidden-field").classList.toggle(
       "hidden",
       ctx.mode !== "encounter-new",
@@ -2439,8 +2443,17 @@
     requestAnimationFrame(() => creatureForm.elements.name.focus());
   }
 
+  // "Save to Library" in the edit modal submits the form, then saves the result to the library
+  let libraryAfterSave = false;
+  $("#creature-save-library").addEventListener("click", () => {
+    libraryAfterSave = true;
+    creatureForm.requestSubmit();
+  });
+
   creatureForm.addEventListener("submit", (e) => {
     e.preventDefault();
+    const toLibrary = libraryAfterSave;
+    libraryAfterSave = false;
     const nameInput = creatureForm.elements.name;
     if (!nameInput.value.trim()) {
       nameInput.focus();
@@ -2538,6 +2551,10 @@
 
     creatureModal.close("ok");
     commit({ undo: undoLabel });
+    if (toLibrary && ctx.mode === "instance-edit") {
+      const saved = findCombatant(ctx.instanceId);
+      if (saved) saveCombatantToLibrary(saved);
+    }
   });
 
   /* Builder: repeatable rows */
@@ -3720,10 +3737,6 @@
           type: combatant.type,
           instanceId: combatant.instanceId,
         });
-        break;
-
-      case "save-to-library":
-        saveCombatantToLibrary(combatant);
         break;
 
       case "remove-instance": {

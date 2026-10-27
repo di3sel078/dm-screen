@@ -36,6 +36,28 @@
         ></span>
         <button
           class="icon-btn"
+          id="btn-shortcuts"
+          type="button"
+          title="Keyboard shortcuts (?)"
+          aria-label="Keyboard shortcuts"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <rect x="2" y="6" width="20" height="12" rx="2" />
+            <path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10" />
+          </svg>
+        </button>
+        <button
+          class="icon-btn"
           id="btn-settings"
           type="button"
           title="Settings and data"
@@ -58,28 +80,6 @@
             />
           </svg>
         </button>
-        <button
-          class="icon-btn"
-          id="btn-shortcuts"
-          type="button"
-          title="Keyboard shortcuts (?)"
-          aria-label="Keyboard shortcuts"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            width="18"
-            height="18"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <rect x="2" y="6" width="20" height="12" rx="2" />
-            <path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10" />
-          </svg>
-        </button>
         <!-- Shown only while the password lock is off; opens Settings -->
         <button
           class="icon-btn lock-badge"
@@ -89,10 +89,6 @@
           title="Password lock is off. Open Settings."
           aria-label="Password lock is off. Open Settings."
         ></button>
-        <!-- Ends the DM login -->
-        <form method="POST" action="/logout" id="logout-form">
-          <button class="btn btn-ghost btn-sm" type="submit">Log out</button>
-        </form>
       </div>
     </header>
 
@@ -396,7 +392,7 @@
                   title="Search"
                   aria-label="Search enemies"
                 >
-                  <img src="/dm-icons/search_icon.png" alt="" />
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.5-4.5" /></svg>
                 </button>
                 <button
                   class="icon-btn icon-btn--img"
@@ -408,7 +404,7 @@
                   title="Sort and filter"
                   aria-label="Sort and filter enemies"
                 >
-                  <img src="/dm-icons/filter_icon.png" alt="" />
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1" /><circle cx="15" cy="6" r="2" /><circle cx="9" cy="12" r="2" /><circle cx="17" cy="18" r="2" /></svg>
                 </button>
                 <button
                   class="btn btn-outline-red btn-sm"
@@ -847,6 +843,14 @@
         </div>
 
         <div class="modal-foot">
+          <button
+            class="btn btn-ghost modal-foot-left"
+            type="button"
+            id="creature-save-library"
+            title="Save these changes, then save this combatant to the library"
+          >
+            Save to Library
+          </button>
           <button class="btn btn-ghost" type="button" data-close>Cancel</button>
           <button class="btn btn-primary" type="submit" id="creature-submit">
             Save
@@ -1143,6 +1147,10 @@
             <p class="detail-text" id="lock-text"></p>
             <div class="settings-row">
               <button class="btn" type="button" id="btn-lock-toggle"></button>
+              <!-- Ends the DM login (hidden while the lock is off) -->
+              <form method="POST" action="/logout" id="logout-form">
+                <button class="btn btn-ghost" type="submit">Log out</button>
+              </form>
             </div>
           </section>
           <section class="detail-section">

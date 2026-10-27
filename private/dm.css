@@ -831,6 +831,7 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 .init-full {
   display: none;
+  white-space: nowrap;
 }
 .card-initiative input {
   width: 100%;
@@ -898,6 +899,39 @@ input[type="number"]::-webkit-inner-spin-button {
   margin-left: 0.5em;
 }
 
+/* PC / Enemy tag next to the name: only the List view shows it there */
+.card-kind {
+  display: none;
+  flex: 0 0 auto;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+}
+.card--pc .card-kind {
+  color: var(--text-1);
+}
+.card--enemy .card-kind {
+  color: var(--red-200);
+}
+.is-compact .card-name-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+.is-compact .card-name-row .card-name {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+.is-compact .card-kind {
+  display: inline;
+}
+/* In the List the tag moved up beside the name, so drop it from the info line */
+.is-compact .card--pc .card-type > span:first-child,
+.is-compact .card--enemy .card-type > span:first-child {
+  display: none;
+}
 .card--pc .card-type {
   color: var(--text-1);
 }
@@ -1539,6 +1573,10 @@ input[type="number"]::-webkit-inner-spin-button {
   background: var(--bg-sunken);
   border-radius: 0 0 var(--r-xl) var(--r-xl);
 }
+/* Pushes a footer button to the left edge */
+.modal-foot-left {
+  margin-right: auto;
+}
 .modal-foot--split {
   justify-content: space-between;
 }
@@ -1894,7 +1932,7 @@ button.chip {
 .card-info {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
   gap: var(--sp-1) var(--sp-4);
   color: var(--text-1);
   font-size: var(--fs-xs);
@@ -3184,7 +3222,7 @@ kbd {
   right: var(--sp-3);
 }
 .is-compact .card-initiative {
-  width: 5.75rem;
+  width: 6.75rem;
   min-height: 0;
   padding: var(--sp-05) var(--sp-1);
 }
@@ -3397,26 +3435,14 @@ kbd {
 .library-col-toggle[aria-expanded="false"] .collapse-caret {
   transform: rotate(-90deg);
 }
-/* Search and filter buttons use the PNGs in assets/. The icons are black
-   artwork, so invert them to white and let "screen" drop the dark background. */
-.icon-btn--img img {
-  width: 60%;
-  height: 60%;
-  object-fit: contain;
-  filter: invert(1) contrast(3);
-  mix-blend-mode: screen;
-  opacity: 0.7;
-}
-.icon-btn--img:hover img {
-  opacity: 1;
+/* Search and filter buttons: inline SVG icons, lit up while their panel is open */
+.icon-btn--img:hover {
+  color: var(--text-0);
 }
 .icon-btn--img[aria-expanded="true"] {
   background: var(--bg-3);
   border-color: var(--red-500);
-}
-.icon-btn--img[aria-expanded="true"] img,
-.icon-btn--img.is-on img {
-  opacity: 1;
+  color: var(--text-0);
 }
 .empty-inline {
   display: flex;
