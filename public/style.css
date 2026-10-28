@@ -34,8 +34,16 @@ body::before {
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(1200px 600px at 50% -10%, var(--red-vignette), transparent 60%),
-    radial-gradient(900px 500px at 100% 100%, var(--red-vignette-faint), transparent 60%),
+    radial-gradient(
+      1200px 600px at 50% -10%,
+      var(--red-vignette),
+      transparent 60%
+    ),
+    radial-gradient(
+      900px 500px at 100% 100%,
+      var(--red-vignette-faint),
+      transparent 60%
+    ),
     radial-gradient(ellipse at center, transparent 40%, var(--bg-0) 130%);
 }
 
@@ -163,7 +171,12 @@ h3 {
   font-size: var(--fs-lg);
   font-weight: 700;
   letter-spacing: var(--tracking-display);
-  background: linear-gradient(90deg, var(--text-0), var(--gold-400) 60%, var(--text-0));
+  background: linear-gradient(
+    90deg,
+    var(--text-0),
+    var(--gold-400) 60%,
+    var(--text-0)
+  );
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -181,10 +194,6 @@ h3 {
 
 .player-head {
   position: relative;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--sp-1) var(--sp-5);
   margin-bottom: var(--sp-3);
   padding-bottom: var(--sp-3);
   /* Leave room for the connection indicator in the top right */
@@ -192,21 +201,39 @@ h3 {
   border-bottom: 1px solid var(--border-mid);
 }
 
+/* "Round N:" and the turn line on one line; a very long turn line is cut with "…" */
+.player-turn {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: baseline;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
 .player-round {
+  flex: 0 0 auto;
+  white-space: nowrap;
   font-size: var(--fs-3xl);
   font-weight: 900;
   letter-spacing: var(--tracking-display);
   line-height: 1;
 }
 
+/* "X's Turn · Up next: Y" is the same size as "Round N:" */
 .player-sub {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   color: var(--text-1);
-  font-size: var(--fs-player-meta);
+  font-size: var(--fs-2xl);
+  line-height: 1;
 }
 
 .player-list {
   /* Columns: order number, name, status, bar */
-  --player-cols: var(--sp-6) minmax(0, max-content) minmax(9rem, max-content) minmax(3rem, 1fr);
+  --player-cols: var(--sp-6) minmax(0, max-content) minmax(9rem, max-content)
+    minmax(3rem, 1fr);
   list-style: none;
   display: flex;
   flex-direction: column;
@@ -341,18 +368,6 @@ h3 {
   border-color: var(--purple-300);
   background: var(--purple-glow-soft);
   color: var(--purple-300);
-}
-
-/* Clock pill in the header */
-.player-clock {
-  padding: var(--sp-1) var(--sp-3);
-  border-radius: var(--r-pill);
-  border: 1px solid var(--border-mid);
-  background: var(--bg-2);
-  color: var(--text-1);
-  font-size: var(--fs-sm);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
 }
 
 /* ---------- Enemy groups: one row that opens to a line per enemy ---------- */

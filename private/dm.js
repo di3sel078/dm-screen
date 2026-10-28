@@ -508,6 +508,9 @@
      3. Domain helpers
      ====================================================================== */
 
+  /** The roll used when an initiative box is left blank (the faint placeholder): a flat 10, plus the bonus. */
+  const DEFAULT_ROLL = 10;
+
   /** Last choice of "Start hidden from the players" in the add dialogs (kept until the page reloads). */
   const startHidden = { pc: false, enemy: false };
 
@@ -533,7 +536,7 @@
     for (let i = 0; i < n; i++) {
       const inst = instantiate(template, type, initiative, templateId);
       // The DM types the d20 roll; the initiative bonus is added here
-      inst.initiative = toInt(initiative, 0) + initBonusOf(inst);
+      inst.initiative = (R.isBlank(initiative) ? DEFAULT_ROLL : toInt(initiative, 0)) + initBonusOf(inst);
       inst.name = uniqueName(enc, template.name);
       inst.hidden = hidden;
       inst.groupId = groupId;
@@ -658,8 +661,6 @@
 
   function nextTurn(enc) {
     if (!enc.combatants.length) return;
-    // The first Next Turn of a fresh encounter starts the clock.
-    if (!clockRunning(enc) && enc.clock.elapsedMs === 0) startClock(enc);
     const { events, newRound } = R.nextTurn(enc);
     if (newRound) roundBump = true;
     followTurn = true;
@@ -900,7 +901,7 @@
     $("#btn-next-turn").disabled = !hasCombatants;
     // Nothing comes before the first turn of round 1
     $("#btn-prev-turn").disabled = !hasCombatants || R.atFirstTurn(enc);
-    $("#btn-reset-round").disabled = enc.round <= 1;
+    $("#btn-reset-round").disabled = !hasCombatants;
     $$("[data-card-mode]").forEach((b) =>
       b.setAttribute(
         "aria-pressed",
@@ -914,6 +915,7 @@
       : "";
 
     renderBanner(enc);
+    renderEnemiesToggle(enc);
 
     const grid = $("#combatant-cards");
     if (!hasCombatants) {
@@ -1030,7 +1032,6 @@
         <header class="group-box-head">
           <span class="group-box-name">Group</span>
           <span class="group-box-note">Shared initiative and stat block, separate HP</span>
-          <button class="btn btn-ghost btn-sm" type="button" data-group-add="${lead.instanceId}" title="Add more of this enemy to the group">+ Add enemy</button>
           <button class="btn btn-ghost btn-sm" type="button" data-group-min="${lead.instanceId}" aria-pressed="${minimized}"
                   title="${minimized ? "Show full cards" : "Show only name and HP for each enemy"}">${minimized ? "Expand" : "Minimize"}</button>
           <button class="btn btn-ghost btn-sm" type="button" data-group-edit="${lead.instanceId}">Edit group</button>
@@ -1059,6 +1060,18 @@
       if (!overflowing()) break;
       part.classList.add("fit-hidden");
     }
+  }
+
+  /** Labels the enemies button "Hide" or "Reveal" to match what a click will do. */
+  function renderEnemiesToggle(enc) {
+    const btn = $("#btn-toggle-enemies");
+    const hasEnemies = enc.combatants.some((c) => c.type === "enemy");
+    const willHide = anyEnemyVisible(enc);
+    btn.disabled = !hasEnemies;
+    btn.innerHTML = `${willHide ? ICON_EYE_OFF : ICON_EYE} ${willHide ? "Hide all enemies" : "Reveal all enemies"}`;
+    btn.title = willHide
+      ? "Hide every enemy from the player display"
+      : "Show every hidden enemy on the player display";
   }
 
   function renderBanner(enc) {
@@ -1167,7 +1180,8 @@
   /* ---------- Card fragments (shared with the detail modal) ---------- */
   /** The quick-info entries under a name, one string each. */
   function subtitleParts(c, withSpeed = false, withRace = false, withStats = false) {
-    if (c.type === "lair") return ["Lair", "loses ties"];
+    if (c.type === "lair")
+      return ["Lair", "loses ties", ...(activeEncounter()?.round <= 1 ? ["sits out round 1"] : [])];
     const speed = withSpeed && c.speed ? `Speed ${c.speed}` : "";
     if (c.type === "pc")
       return [
@@ -1175,6 +1189,7 @@
         `Lvl ${c.level}`,
         c.cls,
         withRace ? c.race : "",
+        withRace && c.campaign ? `Campaign: ${c.campaign}` : "",
         speed,
       ].filter(Boolean);
     // A group's shared card also shows the initiative bonus and passive Perception
@@ -1346,32 +1361,33 @@
       </div>`;
   }
 
-  function economyHtml(c, round) {
-    const chip = (action, label, used, title, disabled = false) => `
-      <button class="chip chip--econ ${used ? "is-used" : ""}" type="button" data-action="${action}"
-              aria-pressed="${used}" title="${title}" ${disabled ? "disabled" : ""}>${label}</button>`;
-    const surpriseNote = c.surprised
-      ? " Surprised: no reactions until its first turn ends."
-      : "";
-    const actionChip = chip(
-      "toggle-action",
-      "Action",
-      c.actionUsed || c.surprised,
-      `Action ${c.actionUsed ? "used" : "available"} this turn.${c.surprised ? " Surprised: no action on its first turn." : ""}`,
-      c.surprised,
-    );
-    return `
-      <div class="card-economy" role="group" aria-label="Action economy">
-        ${actionChip}
-        ${chip("toggle-reaction", "Reaction", c.reactionUsed || c.surprised, `Reaction ${c.reactionUsed ? "used" : "available"}. Returns at the start of its turn.${surpriseNote}`, c.surprised)}
-        ${chip("toggle-bonus", "Bonus", c.bonusActionUsed, `Bonus action ${c.bonusActionUsed ? "used" : "available"} this turn.`)}
-        ${
-          round === 1 || c.surprised
-            ? `
+  /**
+   * Action economy pills: Action, Bonus and Reaction, on every card. Filled means available,
+   * hollow means spent. The detail view (full) also has the Surprised toggle in round 1.
+   */
+  function economyHtml(c, round, { full = false } = {}) {
+    const tracked = c.type === "pc" ? state.ui.econPcs : state.ui.econEnemies;
+    const surprise =
+      full && (round === 1 || c.surprised)
+        ? `
           <button class="chip chip--surprised ${c.surprised ? "is-on" : ""}" type="button" data-action="toggle-surprised" aria-pressed="${c.surprised}"
                   title="Surprised (round 1): can't move or act on its first turn, and can't react until that turn ends.">Surprised</button>`
-            : ""
-        }
+        : "";
+    // Surprised stays available in the detail view even when the toggles are turned off
+    if (!tracked) return surprise ? `<div class="card-economy">${surprise}</div>` : "";
+    const pill = (action, word, spent, note = "", disabled = false) => `
+      <button class="chip econ-pill ${spent ? "is-spent" : ""}" type="button" data-action="${action}"
+              title="${word} ${spent ? "spent" : "available"}.${note}"
+              aria-label="${word}: ${spent ? "spent" : "available"}. Tap to mark it ${spent ? "available" : "spent"}."
+              ${disabled ? "disabled" : ""}>${word}</button>`;
+    const noAction = c.surprised ? " Surprised: no action on its first turn." : "";
+    const noReaction = c.surprised ? " Surprised: no reactions until its first turn ends." : "";
+    return `
+      <div class="card-economy" role="group" aria-label="Action economy" data-fit="7">
+        ${pill("toggle-action", "Action", c.actionUsed || c.surprised, noAction, c.surprised)}
+        ${pill("toggle-bonus", "Bonus", c.bonusActionUsed)}
+        ${pill("toggle-reaction", "Reaction", c.reactionUsed || c.surprised, ` Returns at the start of its turn.${noReaction}`, c.surprised)}
+        ${surprise}
       </div>`;
   }
 
@@ -1452,7 +1468,7 @@
         <div class="card-title-wrap" data-fit="14">
           <div class="card-name-row">
             <h3 class="card-name"><button class="card-name-btn" type="button" data-action="open-detail" title="Open details for ${escapeHtml(c.name)}">${mode === "group" ? groupName : escapeHtml(c.name)}</button></h3>
-            ${c.type === "pc" || (c.type === "enemy" && mode !== "member") ? `<span class="card-kind">${c.type === "pc" ? "PC" : "Enemy"}</span>` : ""}
+            ${c.type === "pc" || (c.type === "enemy" && mode !== "member") ? `<span class="card-kind">(${c.type === "pc" ? "PC" : "Enemy"})</span>` : ""}
           </div>
           ${
             mode === "member"
@@ -1468,6 +1484,7 @@
           }
           ${vs && mode !== "group" ? `<span class="card-down-tag card-down-tag--${vs.key}" data-fit="11">${vs.label}</span>` : ""}
           ${c.hidden && mode !== "member" ? `<span class="card-hidden-tag" data-fit="11" title="Players cannot see this enemy yet">Hidden</span>` : ""}
+          ${c.surprised && c.type !== "lair" && mode !== "group" ? `<span class="card-surprised-tag" data-fit="11" title="Surprised: no action, move or reaction on its first turn">Surprised</span>` : ""}
         </div>
         <div class="card-tools" data-fit="10">${expand}
           ${extraTools}${remove}
@@ -1576,10 +1593,9 @@
           }
           <button class="icon-btn" type="button" data-action="edit-instance" title="Edit stat block" aria-label="Edit ${escapeHtml(c.name)}">${ICON_EDIT}</button>`;
 
-    // The action buttons (and legendary pips); AC is in the card head now
+    // Legendary pips (the action pills sit beside the HP block); AC is in the card head now
     const sideHtml = `
           <div class="card-vitals-side" data-fit="7">
-            ${economyHtml(c, enc.round)}
             ${legendaryHtml(c)}
           </div>`;
     const vitalsHtml = `
@@ -1626,6 +1642,8 @@
             <button class="hp-adj-btn hp-adj-btn--temp" type="button" data-action="temp" title="Grant temporary HP. Keeps the higher value; temp HP doesn't stack.">Temp</button>
           </div>
         </div>`;
+    // The action pills sit just to the right of the HP block
+    const hpRowHtml = `<div class="hp-row">${hpHtml}${economyHtml(c, enc.round)}</div>`;
 
     const moreHtml = `
         <details class="card-more" data-card-more data-fit="1" ${showMore ? "open" : ""}>
@@ -1650,7 +1668,7 @@
         ${mode === "member" ? `<div class="member-status"><span class="member-pill member-pill--${hpTone(c)}">${hpStateLabel(c)}</span></div>` : ""}
         ${isCurrent ? `<span class="sr-only">Current turn.</span>` : ""}
         ${mode === "group" ? "" : vitalsHtml}
-        ${mode === "group" ? "" : hpHtml}
+        ${mode === "group" ? "" : hpRowHtml}
         ${mode === "group" ? "" : `<div class="fit-group" data-fit="5">${statusChipsHtml(c, enc.round)}</div>`}
         ${!mode && isPc && isDown ? `<div class="fit-group" data-fit="6">${deathSavesHtml(c)}</div>` : ""}
         ${!mode && noteLine ? `<p class="card-notes" title="DM notes" data-fit="4"><span class="sr-only">Notes: </span>${escapeHtml(noteLine)}</p>` : ""}
@@ -1698,6 +1716,19 @@
       $("#lib-type-other").value = ui.libraryTypeOther;
     $("#lib-sort").value = ui.librarySort;
     $("#lib-class").value = ui.libraryClass;
+    // PC search, sort and campaign filter
+    if (document.activeElement !== $("#lib-pc-search"))
+      $("#lib-pc-search").value = ui.libraryPcSearch;
+    $("#lib-pc-sort").value = ui.libraryPcSort;
+    refreshCampaignOptions();
+    $("#lib-pc-search-toggle").classList.toggle(
+      "is-on",
+      !!ui.libraryPcSearch.trim(),
+    );
+    $("#lib-pc-filter-toggle").classList.toggle(
+      "is-on",
+      !!(ui.libraryClass || ui.libraryPcCampaign) || ui.libraryPcSort !== "name",
+    );
     $("#lib-cr-min").value = ui.libraryCrMin;
     $("#lib-cr-max").value = ui.libraryCrMax;
     $("#lib-type").value = ui.libraryType;
@@ -1727,10 +1758,28 @@
     );
   }
 
+  /** Fills the campaign filter, the campaign suggestions in the PC form and the party picker. */
+  function refreshCampaignOptions() {
+    const campaigns = R.campaignsOf(libraryList("pc"));
+    const options = campaigns
+      .map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`)
+      .join("");
+    const filter = $("#lib-pc-campaign");
+    // A campaign the filter is set to stays listed even if no PC uses it any more
+    const chosen = state.ui.libraryPcCampaign;
+    const extra =
+      chosen && !campaigns.some((c) => R.sameCampaign(c, chosen))
+        ? `<option value="${escapeHtml(chosen)}">${escapeHtml(chosen)}</option>`
+        : "";
+    filter.innerHTML = `<option value="">All campaigns</option>${options}${extra}`;
+    filter.value = chosen;
+    $("#campaign-list").innerHTML = options;
+  }
+
   function renderLibraryList(type, host, emptyText) {
     const all = libraryList(type);
     const ui = state.ui;
-    // Search, sort and the CR and Type filters are for the enemy list only
+    // Each list has its own search, sort and filters
     const list =
       type === "enemy"
         ? R.filterLibrary(all, type, {
@@ -1741,7 +1790,12 @@
             typeOther: ui.libraryTypeOther,
             sort: ui.librarySort,
           })
-        : R.filterLibrary(all, type, { cls: ui.libraryClass });
+        : R.filterLibrary(all, type, {
+            search: ui.libraryPcSearch,
+            cls: ui.libraryClass,
+            campaign: ui.libraryPcCampaign,
+            sort: ui.libraryPcSort,
+          });
     if (!all.length) {
       const starter =
         type === "enemy" && SRD
@@ -1768,6 +1822,7 @@
             <div class="lib-name">${escapeHtml(t.name)}</div>
             <div class="lib-meta">
               ${lead}
+              ${type === "pc" && t.campaign ? `<span>Campaign <b>${escapeHtml(t.campaign)}</b></span>` : ""}
               <span>HP <b>${toInt(t.hp?.max, 0)}</b></span>
               <span>AC <b>${toInt(t.ac, 10)}</b></span>
               <span class="lib-abilities">${STAT_KEYS.map((k) => `${k.toUpperCase()} ${formatMod(modifier(t.stats?.[k]))}`).join(" · ")}</span>
@@ -2222,6 +2277,7 @@
   }
 
   const ENEMY_TEXT_FIELDS = [
+    "alias",
     "creatureType",
     "alignment",
     "multiattack",
@@ -2238,7 +2294,8 @@
     f.hpMax.value = block.hp.max;
     f.ac.value = block.ac;
     f.speed.value = block.speed;
-    f.initiative.value = toInt(data.initiative, 0);
+    // A new combatant shows the "10" placeholder until the roll is typed over it
+    f.initiative.value = R.isBlank(data.initiative) ? "" : toInt(data.initiative, 0);
     STAT_KEYS.forEach((k) => {
       f[k].value = block.stats[k];
     });
@@ -2247,6 +2304,7 @@
     f.level.value = block.level ?? 1;
     f.cls.value = block.cls ?? "";
     f.race.value = block.race ?? "";
+    f.campaign.value = block.campaign ?? "";
     f.cr.value = block.cr ?? "";
     f.legendaryActions.value = block.legendaryActions ?? 0;
     f.legendaryResistance.value = block.legendaryResistance ?? 0;
@@ -2338,6 +2396,7 @@
             level: f.level.value,
             cls: f.cls.value,
             race: f.race.value,
+            campaign: f.campaign.value,
           }
         : {
             cr: f.cr.value,
@@ -2373,7 +2432,7 @@
           };
     return {
       block: normalizeTemplate({ ...shared, ...specific }, type),
-      initiative: toInt(f.initiative.value, 0),
+      initiative: R.isBlank(f.initiative.value) ? DEFAULT_ROLL : toInt(f.initiative.value, 0),
       saveToLibrary: f.saveToLibrary.checked,
       hidden: f.startHidden.checked,
     };
@@ -2387,6 +2446,7 @@
    *   instance-edit  { instanceId }            → edit an instance's stat block
    */
   function openCreatureModal(ctx) {
+    refreshCampaignOptions();
     creatureCtx = ctx;
     const typeLabel = ctx.type === "pc" ? "Player Character" : "Enemy";
     const title =
@@ -2429,7 +2489,7 @@
       speed: "30 ft.",
       stats: {},
       spellSlots: [],
-      initiative: 0,
+      initiative: "",
       level: 1,
       cr: "1",
     };
@@ -2868,7 +2928,7 @@
 
           <section class="detail-section">
             <h3 class="detail-section-title">Turn &amp; Actions</h3>
-            ${economyHtml(c, enc.round)}
+            ${economyHtml(c, enc.round, { full: true })}
             ${legendaryHtml(c)}
           </section>
           ${c.type === "enemy" ? groupSectionHtml(c, enc) : ""}
@@ -3162,7 +3222,7 @@
     select.disabled = empty;
     $("#picker-submit").disabled = empty;
     const f = $("#picker-form").elements;
-    f.initiative.value = 0;
+    f.initiative.value = "";
     f.count.value = 1;
     // PCs are added one at a time
     $("#picker-count-field").classList.toggle("hidden", type === "pc");
@@ -3221,6 +3281,94 @@
   });
 
   wireDialogChrome(pickerModal);
+
+  /* ---------- Add Party (every PC of one campaign) ---------- */
+  const partyModal = $("#party-modal");
+  const NO_CAMPAIGN = "__none__";
+  // The party picked last time, kept until the page reloads
+  let lastParty = "";
+
+  const partyMembers = (value) =>
+    libraryList("pc").filter((t) =>
+      value === NO_CAMPAIGN ? !t.campaign : R.sameCampaign(t.campaign, value),
+    );
+
+  /** One row per PC with its own initiative box; a PC already in the encounter is greyed out. */
+  function renderPartyList() {
+    const enc = activeEncounter();
+    const members = partyMembers($("#party-select").value);
+    $("#party-list").innerHTML = members
+      .map((t) => {
+        const taken = !!enc && !!R.duplicatePc(enc, t.id, t.name);
+        const bonus = formatMod(initBonusOf({ ...t, type: "pc" }));
+        const meta = [`Lvl ${t.level}`, t.cls, `Init ${bonus}`].filter(Boolean).join(" · ");
+        return `
+        <li class="party-row ${taken ? "is-taken" : ""}">
+          <label for="party-init-${t.id}">
+            <span class="party-name">${escapeHtml(t.name)}</span>
+            <span class="party-meta">${taken ? "already in this encounter" : escapeHtml(meta)}</span>
+          </label>
+          <input id="party-init-${t.id}" type="number" placeholder="${DEFAULT_ROLL}" data-party-init="${t.id}"
+                 aria-label="Initiative roll for ${escapeHtml(t.name)}" ${taken ? "disabled" : ""}>
+        </li>`;
+      })
+      .join("");
+    const free = members.filter((t) => !enc || !R.duplicatePc(enc, t.id, t.name)).length;
+    $("#party-submit").disabled = free === 0;
+    $("#party-submit").textContent = free ? `Add ${free} PC${free === 1 ? "" : "s"}` : "Add Party";
+  }
+
+  function openPartyDialog() {
+    const pcs = libraryList("pc");
+    const campaigns = R.campaignsOf(pcs);
+    const unassigned = pcs.some((t) => !t.campaign);
+    const options = [
+      ...campaigns.map((c) => ({ value: c, label: c })),
+      ...(unassigned ? [{ value: NO_CAMPAIGN, label: "No campaign" }] : []),
+    ];
+    $("#party-select").innerHTML = options
+      .map((o) => `<option value="${escapeHtml(o.value)}">${escapeHtml(o.label)}</option>`)
+      .join("");
+    if (options.some((o) => o.value === lastParty)) $("#party-select").value = lastParty;
+    const empty = options.length === 0 || (!campaigns.length && !unassigned);
+    $("#party-empty").textContent = !pcs.length
+      ? "The library has no player characters yet."
+      : "";
+    $("#party-empty").classList.toggle("hidden", !!pcs.length);
+    $("#party-select-field").classList.toggle("hidden", empty);
+    $("#party-hint").classList.toggle("hidden", empty);
+    $("#party-hidden-field").classList.toggle("hidden", empty);
+    $("#party-submit").classList.toggle("hidden", empty);
+    $("#party-form").elements.startHidden.checked = startHidden.pc;
+    renderPartyList();
+    openModal(partyModal);
+    requestAnimationFrame(() => $("#party-select").focus());
+  }
+  $("#party-select").addEventListener("change", () => {
+    lastParty = $("#party-select").value;
+    renderPartyList();
+  });
+
+  $("#party-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const enc = activeEncounter();
+    if (!enc) return;
+    const hidden = e.target.elements.startHidden.checked;
+    startHidden.pc = hidden;
+    lastParty = $("#party-select").value;
+    let added = 0;
+    partyMembers(lastParty).forEach((t) => {
+      if (R.duplicatePc(enc, t.id, t.name)) return;
+      const roll = $(`[data-party-init="${t.id}"]`, partyModal)?.value;
+      added += addCombatantsFromTemplate(enc, t.id, roll, 1, hidden);
+    });
+    partyModal.close("ok");
+    if (added) toast(`${added} PC${added === 1 ? "" : "s"} added to the encounter.`);
+    commit({ undo: added ? "Add party" : null });
+  });
+  wireDialogChrome(partyModal);
+
+  $("#btn-add-party").addEventListener("click", openPartyDialog);
 
   /* ======================================================================
      6. Event wiring
@@ -3338,17 +3486,43 @@
       liveSay(turnAnnouncement(enc));
     }),
   );
+  /** Put the whole fight back to its start. Asks first; Undo brings it back (the clock stays at 0). */
   $("#btn-reset-round").addEventListener(
     "click",
-    withEncounter((enc) => {
-      const events = R.resetRound(enc);
-      if (!events) return;
-      announce(events, { enc, quiet: true });
+    withEncounter(async (enc) => {
+      const ok = await confirmDialog({
+        title: "Reset Encounter",
+        html: `Reset <strong>${escapeHtml(enc.name)}</strong> to its start? Round goes back to 1 and the clock to 0. Everyone returns to full HP with no conditions, and spell slots, recharges and legendary actions refill. The combat log is cleared. Names, initiative and hidden enemies stay.`,
+        okLabel: "Reset Encounter",
+      });
+      if (!ok) return;
+      R.resetEncounter(enc);
       roundBump = true;
-      commit({ undo: "Reset round" });
-      toast("Round counter reset to 1.", { action: { label: "Undo", run: undo } });
+      followTurn = true;
+      commit({ undo: "Reset encounter" });
+      toast("Encounter reset.", { action: { label: "Undo", run: undo } });
     }),
   );
+
+  // "+ Add" opens a small menu: PC, Party, Enemy or Lair Action
+  const addMenu = $("#add-menu");
+  const addBtn = $("#btn-add");
+  const setAddMenuOpen = (open) => {
+    addMenu.hidden = !open;
+    addBtn.setAttribute("aria-expanded", String(open));
+  };
+  addBtn.addEventListener("click", () => setAddMenuOpen(addMenu.hidden));
+  // Picking an item closes the menu; so does a click elsewhere or Escape
+  addMenu.addEventListener("click", () => setAddMenuOpen(false));
+  document.addEventListener("click", (e) => {
+    if (!$("#add-menu-wrap").contains(e.target)) setAddMenuOpen(false);
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !addMenu.hidden) {
+      setAddMenuOpen(false);
+      addBtn.focus();
+    }
+  });
 
   $("#btn-add-pc").addEventListener("click", () => openPicker("pc"));
   $("#btn-add-enemy").addEventListener("click", () => openPicker("enemy"));
@@ -3411,13 +3585,12 @@
     );
     commit({ undo: hidden ? "Hide all enemies" : "Reveal all enemies" });
   }
-  $("#btn-hide-enemies").addEventListener(
+  // One button for both: hides every enemy, or reveals them all once none are showing
+  const anyEnemyVisible = (enc) =>
+    enc.combatants.some((c) => c.type === "enemy" && !c.hidden);
+  $("#btn-toggle-enemies").addEventListener(
     "click",
-    withEncounter((enc) => setEnemiesHidden(enc, true)),
-  );
-  $("#btn-reveal-enemies").addEventListener(
-    "click",
-    withEncounter((enc) => setEnemiesHidden(enc, false)),
+    withEncounter((enc) => setEnemiesHidden(enc, anyEnemyVisible(enc))),
   );
 
   $("#btn-clock-toggle").addEventListener(
@@ -3447,25 +3620,6 @@
   };
   $("#btn-toggle-log").addEventListener("click", toggleLog);
 
-  // Hamburger menu holding Log, Player View and End Encounter
-  const trackerMenu = $("#tracker-menu");
-  const menuBtn = $("#btn-menu");
-  const setMenuOpen = (open) => {
-    trackerMenu.hidden = !open;
-    menuBtn.setAttribute("aria-expanded", String(open));
-  };
-  menuBtn.addEventListener("click", () => setMenuOpen(trackerMenu.hidden));
-  // Picking an item closes the menu; so does a click elsewhere or Escape
-  trackerMenu.addEventListener("click", () => setMenuOpen(false));
-  document.addEventListener("click", (e) => {
-    if (!$("#tracker-menu-wrap").contains(e.target)) setMenuOpen(false);
-  });
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !trackerMenu.hidden) {
-      setMenuOpen(false);
-      menuBtn.focus();
-    }
-  });
   $("#btn-log-close").addEventListener("click", toggleLog);
   $("#btn-log-clear").addEventListener(
     "click",
@@ -3567,6 +3721,7 @@
       })
       .join("");
     $("#group-disband").hidden = !c.groupId;
+    $("#group-add").hidden = !c.groupId;
     openModal(groupModal);
   }
 
@@ -3606,6 +3761,33 @@
     groupModal.close("ok");
     commit({ undo: `Disband group (${c.name})` });
   });
+  /** Ask how many more of this group's enemy to add, then add them. */
+  async function addEnemiesToGroup(lead) {
+    const id = lead.instanceId;
+    const answer = await promptDialog({
+      title: "Add to Group",
+      label: `How many more ${baseName(lead.name)}s?`,
+      value: "1",
+      okLabel: "Add",
+    });
+    const count = toInt(answer, 0);
+    const enc = activeEncounter();
+    const current = findCombatant(id);
+    if (!enc || !current || count < 1) return;
+    const added = addToGroup(enc, current, count);
+    toast(
+      `${added === 1 ? "1 enemy" : `${added} enemies`} added to the group.`,
+    );
+    commit({ undo: `Add to group (${baseName(current.name)})` });
+  }
+
+  $("#group-add").addEventListener("click", () => {
+    const c = findCombatant(groupFor);
+    if (!c) return;
+    groupModal.close("ok");
+    addEnemiesToGroup(c);
+  });
+
   wireDialogChrome(groupModal);
 
   /* ---------- Shortcuts dialog & card layout ---------- */
@@ -3615,7 +3797,6 @@
     $("#opt-arrow-keys").checked = state.ui.arrowKeys;
     openModal(shortcutsModal);
   }
-  $("#btn-shortcuts").addEventListener("click", openShortcuts);
   $("#opt-arrow-keys").addEventListener("change", (e) => {
     state.ui.arrowKeys = e.target.checked;
     saveState();
@@ -3645,15 +3826,14 @@
     return { enc, combatant, el };
   }
 
-  // The buttons in a group's box header: edit, add enemies, minimize
-  cardsHost.addEventListener("click", async (e) => {
+  // The buttons in a group's box header: edit, minimize, delete
+  cardsHost.addEventListener("click", (e) => {
     const btn = e.target.closest(
-      "[data-group-edit], [data-group-add], [data-group-min], [data-group-delete]",
+      "[data-group-edit], [data-group-min], [data-group-delete]",
     );
     if (!btn) return;
     const id =
       btn.dataset.groupEdit ||
-      btn.dataset.groupAdd ||
       btn.dataset.groupMin ||
       btn.dataset.groupDelete;
     const lead = findCombatant(id);
@@ -3678,23 +3858,7 @@
       if (!set.delete(lead.groupId)) set.add(lead.groupId);
       state.ui.expandedGroups = [...set];
       commit();
-      return;
     }
-    const answer = await promptDialog({
-      title: "Add to Group",
-      label: `How many more ${baseName(lead.name)}s?`,
-      value: "1",
-      okLabel: "Add",
-    });
-    const count = toInt(answer, 0);
-    const enc = activeEncounter();
-    const current = findCombatant(id);
-    if (!enc || !current || count < 1) return;
-    const added = addToGroup(enc, current, count);
-    toast(
-      `${added === 1 ? "1 enemy" : `${added} enemies`} added to the group.`,
-    );
-    commit({ undo: `Add to group (${baseName(current.name)})` });
   });
 
   cardsHost.addEventListener("click", (e) => {
@@ -3926,10 +4090,56 @@
     }
   });
 
+  /* An empty amount box counts as the placeholder 1, so its first step up is 2 and its step down is 0.
+     Arrow keys on an empty box are handled below. For the spinner arrows, a value that goes
+     from empty to 1 without any typing in between was a step up from empty. */
+  const hpDeltaPrev = new WeakMap();
+  let hpDeltaTyping = false;
+  const hpDeltaInput = (e) => e.target.closest?.('[data-field="hpDelta"]');
+  ["pointerdown", "mousedown", "touchstart"].forEach((type) =>
+    cardsHost.addEventListener(
+      type,
+      (e) => {
+        const input = hpDeltaInput(e);
+        if (!input) return;
+        hpDeltaTyping = false;
+        hpDeltaPrev.set(input, input.value);
+      },
+      true,
+    ),
+  );
+  cardsHost.addEventListener(
+    "keydown",
+    (e) => {
+      const input = hpDeltaInput(e);
+      if (!input) return;
+      hpDeltaTyping = true;
+      hpDeltaPrev.set(input, input.value);
+    },
+    true,
+  );
+  cardsHost.addEventListener("paste", (e) => {
+    if (hpDeltaInput(e)) hpDeltaTyping = true;
+  });
+  cardsHost.addEventListener("input", (e) => {
+    const input = hpDeltaInput(e);
+    if (!input) return;
+    if (!hpDeltaTyping && hpDeltaPrev.get(input) === "" && input.value === "1") {
+      input.value = "2";
+    }
+    hpDeltaPrev.set(input, input.value);
+  });
+
   /* Enter in the damage box applies damage; Shift+Enter heals */
   cardsHost.addEventListener("keydown", (e) => {
     const input = e.target.closest('[data-field="hpDelta"]');
-    if (!input || e.key !== "Enter") return;
+    if (!input) return;
+    if ((e.key === "ArrowUp" || e.key === "ArrowDown") && input.value === "") {
+      e.preventDefault();
+      input.value = e.key === "ArrowUp" ? "2" : "0";
+      return;
+    }
+    if (e.key !== "Enter") return;
     e.preventDefault();
     const el = input.closest("[data-instance-id]");
     $(
@@ -4011,6 +4221,20 @@
   libraryFilter("libraryCrMax", $("#lib-cr-max"));
   libraryFilter("libraryType", $("#lib-type"));
   libraryFilter("libraryTypeOther", $("#lib-type-other"), "input");
+  libraryFilter("libraryPcSearch", $("#lib-pc-search"), "input");
+  libraryFilter("libraryPcSort", $("#lib-pc-sort"));
+  libraryFilter("libraryPcCampaign", $("#lib-pc-campaign"));
+
+  // Reset the PC sort, class and campaign (search has its own box)
+  $("#lib-pc-clear-filters").addEventListener("click", () => {
+    Object.assign(state.ui, {
+      libraryPcSort: "name",
+      libraryClass: "",
+      libraryPcCampaign: "",
+    });
+    saveState();
+    renderLibrary();
+  });
 
   // Reset sort, CR range and type (search has its own box)
   $("#lib-clear-filters").addEventListener("click", () => {
@@ -4182,6 +4406,8 @@
   const settingsModal = $("#settings-modal");
   function openSettings() {
     $("#opt-arrow-keys-settings").checked = state.ui.arrowKeys;
+    $("#opt-econ-pcs").checked = state.ui.econPcs;
+    $("#opt-econ-enemies").checked = state.ui.econEnemies;
     $("#settings-saved").textContent = lastSavedAt
       ? `Last saved ${new Date(lastSavedAt).toLocaleString()}.${saveError ? " The latest change could not be saved." : ""}`
       : "Nothing saved yet.";
@@ -4206,9 +4432,16 @@
     state.ui.arrowKeys = e.target.checked;
     saveState();
   });
+  // Turn the action, bonus and reaction toggles on or off for PCs or enemies
+  $("#opt-econ-pcs").addEventListener("change", (e) => {
+    state.ui.econPcs = e.target.checked;
+    commit();
+  });
+  $("#opt-econ-enemies").addEventListener("change", (e) => {
+    state.ui.econEnemies = e.target.checked;
+    commit();
+  });
   wireDialogChrome(settingsModal);
-
-  $("#btn-player-view").addEventListener("click", openPlayerWindow);
 
   /* ======================================================================
      7. Boot

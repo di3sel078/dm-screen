@@ -266,7 +266,11 @@
       block.level = clamp(toInt(t.level, 1), 1, 20);
       block.cls = String(t.cls ?? "");
       block.race = String(t.race ?? "").trim();
+      // Which campaign (party) this PC belongs to; blank means none
+      block.campaign = text(t.campaign).trim();
     } else {
+      // What the player display shows instead of the name; blank means the name
+      block.alias = text(t.alias).trim();
       block.cr = CR_OPTIONS.includes(String(t.cr)) ? String(t.cr) : "";
       block.creatureType = text(t.creatureType).trim();
       block.alignment = text(t.alignment).trim();
@@ -398,6 +402,7 @@
       log: normalizeLog(enc.log),
     };
     tidyGroups(out);
+    moveOffLair(out);
     return out;
   }
 
@@ -410,6 +415,7 @@
 
   const VIEWS = ["encounters", "active", "library"];
   const LIBRARY_SORTS = ["name", "name-desc", "cr-asc", "cr", "hp"];
+  const PC_SORTS = ["name", "name-desc", "level", "level-asc", "campaign"];
 
   function normalizeUi(ui = {}) {
     const crOrBlank = (v) => (CR_OPTIONS.includes(String(v)) ? String(v) : "");
@@ -419,6 +425,9 @@
       activeEncounterId: safeRef(ui.activeEncounterId),
       cardMode: ui.cardMode === "full" ? "full" : "compact",
       arrowKeys: !!ui.arrowKeys,
+      // Show the action, bonus action and reaction toggles on PC and enemy cards (on by default)
+      econPcs: ui.econPcs !== false,
+      econEnemies: ui.econEnemies !== false,
       logOpen: !!ui.logOpen,
       diceOpen: !!ui.diceOpen,
       groupInitiative: ui.groupInitiative !== false,
@@ -431,6 +440,10 @@
       libraryType: ui.libraryType === "other" || CREATURE_TYPES.includes(ui.libraryType) ? ui.libraryType : "",
       libraryTypeOther: text(ui.libraryTypeOther),
       librarySort: LIBRARY_SORTS.includes(ui.librarySort) ? ui.librarySort : "name",
+      // The PC list has its own search, sort and campaign filter
+      libraryPcSearch: text(ui.libraryPcSearch),
+      libraryPcSort: PC_SORTS.includes(ui.libraryPcSort) ? ui.libraryPcSort : "name",
+      libraryPcCampaign: text(ui.libraryPcCampaign),
     };
   }
   const defaultState = () => ({
@@ -513,9 +526,9 @@
    * Keeps currentTurnIndex pointing at the same combatant it did before the sort.
    */
   function sortEncounter(enc) {
-    // Before the first "Next Turn" (round 1, pointer at the top) the DM is still
+    // Before the first "Next Turn" (round 1, pointer on the first one who acts) the DM is still
     // setting up, so the pointer stays on whoever ends up first after sorting.
-    const settingUp = enc.round === 1 && enc.currentTurnIndex === 0;
+    const settingUp = atFirstTurn(enc);
     const currentId = settingUp ? null : (enc.combatants[enc.currentTurnIndex]?.instanceId ?? null);
     const isLair = (c) => (c.type === "lair" ? 1 : 0);
     enc.combatants.sort((a, b) =>
@@ -544,6 +557,14 @@
     }
     if (enc.combatants.length === 0) enc.currentTurnIndex = 0;
     else enc.currentTurnIndex = clamp(enc.currentTurnIndex, 0, enc.combatants.length - 1);
+    moveOffLair(enc);
+  }
+
+  /** A lair action sits out round 1, so the turn starts on whoever acts first after it. */
+  function moveOffLair(enc) {
+    if (enc.combatants[enc.currentTurnIndex]?.type !== "lair" || enc.round > 1) return;
+    const first = enc.combatants.findIndex((c) => !skipsTurn(c, enc.round));
+    if (first >= 0) enc.currentTurnIndex = first;
   }
 
   /** Roll a d6 for each spent recharge ability; a roll ≥ min recharges it (MM p.11). */
@@ -559,13 +580,16 @@
     return events;
   }
 
-  /** A hidden enemy has not joined the fight, so it gets no turn until it is revealed. */
-  const skipsTurn = (c) => !!c && c.type === "enemy" && !!c.hidden;
+  /**
+   * A hidden enemy has not joined the fight, so it gets no turn until it is revealed.
+   * A lair action sits out round 1 (it is not in play yet) and acts from round 2.
+   */
+  const skipsTurn = (c, round) => !!c && ((c.type === "enemy" && !!c.hidden) || (c.type === "lair" && round <= 1));
 
   /** True on the very first turn of round 1, where there is nothing earlier to go back to. */
   function atFirstTurn(enc) {
     if (enc.round > 1) return false;
-    return !enc.combatants.slice(0, enc.currentTurnIndex).some((c) => !skipsTurn(c));
+    return !enc.combatants.slice(0, enc.currentTurnIndex).some((c) => !skipsTurn(c, enc.round));
   }
 
   /** Index of whoever acts after the current combatant (hidden enemies skipped). */
@@ -573,7 +597,9 @@
     const n = enc.combatants.length;
     for (let k = 1; k < n; k++) {
       const idx = (enc.currentTurnIndex + k) % n;
-      if (!skipsTurn(enc.combatants[idx])) return idx;
+      // Past the end of the list it is the next round
+      const round = enc.round + (enc.currentTurnIndex + k >= n ? 1 : 0);
+      if (!skipsTurn(enc.combatants[idx], round)) return idx;
     }
     return n ? (enc.currentTurnIndex + 1) % n : -1;
   }
@@ -681,7 +707,7 @@
         });
         events.push(...expireConditions(enc));
       }
-      if (!skipsTurn(enc.combatants[enc.currentTurnIndex])) break;
+      if (!skipsTurn(enc.combatants[enc.currentTurnIndex], enc.round)) break;
     }
     events.unshift({ kind: "turn", text: turnText(enc) });
     events.push(...startTurn(enc.combatants[enc.currentTurnIndex]));
@@ -699,7 +725,7 @@
         enc.currentTurnIndex = n - 1;
         if (enc.round > 1) { enc.round -= 1; newRound = true; }
       }
-      if (!skipsTurn(enc.combatants[enc.currentTurnIndex])) break;
+      if (!skipsTurn(enc.combatants[enc.currentTurnIndex], enc.round)) break;
     }
     return { newRound, events: [{ kind: "turn", text: `Back to ${turnText(enc)}` }] };
   }
@@ -1208,6 +1234,34 @@
 
   /* ---------- Encounters ---------- */
 
+  /**
+   * Put the whole fight back to its start, in place: round 1, first turn, clock at 0, log
+   * cleared. Everyone is back at full HP with no conditions, exhaustion, concentration,
+   * death saves or used actions, and slots, recharges and legendary actions are refilled.
+   * Names, initiative, groups, notes, hidden and card sizes stay.
+   */
+  function resetEncounter(enc) {
+    enc.combatants = enc.combatants.map((c) => {
+      if (c.type === "lair") return c;
+      const fresh = instantiate(templateFromInstance(c), c.type, c.initiative, c.templateId);
+      return Object.assign(fresh, {
+        instanceId: c.instanceId,
+        name: c.name,
+        groupId: c.groupId || null,
+        initRank: c.initRank || 0,
+        notes: c.notes,
+        hidden: !!c.hidden,
+        cardSize: c.cardSize,
+      });
+    });
+    enc.round = 1;
+    enc.clock = { elapsedMs: 0, startedAt: null };
+    enc.log = [];
+    enc.currentTurnIndex = 0;
+    sortEncounter(enc);
+    pushLog(enc, "info", "Encounter reset to the start.");
+  }
+
   /** A fresh copy for a rerun: same combatants and initiative, everything else reset. */
   function duplicateEncounter(enc, name = `${enc.name} (copy)`) {
     const copy = normalizeEncounter({ name, combatants: [], round: 1, currentTurnIndex: 0 });
@@ -1228,20 +1282,34 @@
 
   /* ---------- Library ---------- */
 
+  /** Campaign names compare ignoring case and spacing, so "Curse of Strahd" and "curse of strahd " match. */
+  const sameCampaign = (a, b) => text(a).trim().toLowerCase() === text(b).trim().toLowerCase();
+
+  /** The campaigns used by a list of PC templates, A→Z, each spelled as first seen. */
+  function campaignsOf(pcs) {
+    const seen = new Map();
+    pcs.forEach((t) => {
+      const name = text(t.campaign).trim();
+      if (name && !seen.has(name.toLowerCase())) seen.set(name.toLowerCase(), name);
+    });
+    return [...seen.values()].sort((a, b) => a.localeCompare(b));
+  }
+
   /**
    * Search, filter and sort a library list. Options: { search, cls, crMin,
-   * crMax, creatureType, typeOther, sort } where sort is "name" | "name-desc" | "cr" (high to low) |
-   * "cr-asc" (low to high) | "level" | "hp". Creatures with no CR sort last.
+   * crMax, creatureType, typeOther, campaign, sort } where sort is "name" | "name-desc" | "cr" (high to low) |
+   * "cr-asc" (low to high) | "level" (high to low) | "level-asc" | "campaign" | "hp". Creatures with no CR sort last.
    */
-  function filterLibrary(list, type, { search = "", cls = "", crMin = "", crMax = "", creatureType = "", typeOther = "", sort = "name" } = {}) {
+  function filterLibrary(list, type, { search = "", cls = "", campaign = "", crMin = "", crMax = "", creatureType = "", typeOther = "", sort = "name" } = {}) {
     const q = String(search).trim().toLowerCase();
     // "other" matches whatever the DM typed; otherwise the chosen type word
     const typeQ = (creatureType === "other" ? String(typeOther) : String(creatureType)).trim().toLowerCase();
     const lo = isBlank(crMin) ? -Infinity : parseCr(crMin);
     const hi = isBlank(crMax) ? Infinity : parseCr(crMax);
     const out = list.filter((t) => {
-      if (q && ![t.name, t.cls, t.race, t.creatureType].some((v) => String(v || "").toLowerCase().includes(q))) return false;
+      if (q && ![t.name, t.cls, t.race, t.creatureType, t.campaign].some((v) => String(v || "").toLowerCase().includes(q))) return false;
       if (type === "pc" && cls && t.cls !== cls) return false;
+      if (type === "pc" && campaign && !sameCampaign(t.campaign, campaign)) return false;
       if (type === "enemy" && typeQ && !String(t.creatureType || "").toLowerCase().includes(typeQ)) return false;
       if (type === "enemy" && (lo > -Infinity || hi < Infinity)) {
         if (isBlank(t.cr)) return false;
@@ -1252,6 +1320,12 @@
     });
     const byName = (a, b) => a.name.localeCompare(b.name);
     if (sort === "name-desc") return out.sort((a, b) => b.name.localeCompare(a.name));
+    if (sort === "campaign") {
+      // A→Z by campaign, PCs with no campaign last, then A→Z by name
+      const camp = (t) => text(t.campaign).trim().toLowerCase();
+      return out.sort((a, b) => (camp(a) === camp(b) ? 0 : !camp(a) ? 1 : !camp(b) ? -1 : camp(a).localeCompare(camp(b))) || byName(a, b));
+    }
+    if (sort === "level-asc") return out.sort((a, b) => (toInt(a.level, 0) - toInt(b.level, 0)) || byName(a, b));
     if (sort === "cr-asc") {
       // Blank CR goes last, then A→Z within the same CR
       const crOf = (t) => (isBlank(t.cr) ? Infinity : parseCr(t.cr));
@@ -1286,6 +1360,13 @@
     return "Hurt";
   }
 
+  /** The name the players see: the alias plus the name's number ("Goblin 2" → "Shadow 2"), or the name. */
+  function playerName(c) {
+    const alias = c.type === "enemy" ? text(c.alias).trim() : "";
+    if (!alias) return c.name;
+    return alias + (/\s+\d+$/.exec(c.name)?.[0] ?? "");
+  }
+
   /**
    * Everything the player window is allowed to know, built field by field so
    * nothing hidden (enemy AC or exact HP, stats, notes, attacks, lair text)
@@ -1299,7 +1380,8 @@
 
     // Hidden combatants are left out completely: no row, and not "Up next" either.
     // Visible members of an enemy group share one entry. Positions below are entry positions.
-    const visible = all.filter((c) => !c.hidden);
+    // (A lair action is not shown in round 1 either.)
+    const visible = all.filter((c) => !c.hidden && !skipsTurn(c, enc.round));
     const entries = [];
     const entryOf = new Map();
     visible.forEach((c) => {
@@ -1320,11 +1402,11 @@
 
     // Several enemies in a group show as one row; tapping it opens a line for each enemy
     const groupEntry = (members) => {
-      const base = members[0].name.replace(/\s+\d+$/, "");
+      const base = playerName({ ...members[0], name: members[0].name.replace(/\s+\d+$/, "") });
       const views = members.map((m) => {
         const band = healthBand(m);
         return {
-          name: m.name,
+          name: playerName(m),
           band,
           bar: HEALTH_BAND_BARS[band],
           current: m === all[turn],
@@ -1367,7 +1449,7 @@
         if (c.type === "lair") return { type: "lair", name: "Lair action" };
         const base = {
           type: c.type,
-          name: c.name,
+          name: playerName(c),
           conditions: c.conditions.map((x) => ({ name: x.name, roundsLeft: roundsLeft(x, enc.round) })),
           exhaustion: c.exhaustion,
         };
@@ -1433,13 +1515,13 @@
     CARD_SIZE_LIMITS, normalizeCardSize,
     instantiate, makeLair, uniqueName,
     sortEncounter, rollRecharges, startTurn, expireConditions, nextTurn, prevTurn, delayTurn, resetRound, skipsTurn, atFirstTurn, nextActorIndex, duplicatePc, groupMembers, setGroup, disbandGroup, setInitiative, tidyGroups,
-    groupKey, rollInitiativeFor, rollInitiative,
+    groupKey, playerName, rollInitiativeFor, rollInitiative,
     hasCondition, conditionNames, isImmuneTo, roundsLeft, addCondition, removeCondition, toggleCondition, changeConditionRounds,
     endConcentration, exhaustionEffects, changeExhaustion,
     isDead, isStable, concentrationDc, adjustHp, afterHpChange, grantTempHp, damageAfterDefenses,
     applyDamage, applyHealing, applyRest,
     parseDice, rollDice, attackDamageExpr, pushLog,
-    SCHEMA_VERSION, exportPayload, parseImport, mergeImport, duplicateEncounter, filterLibrary,
+    SCHEMA_VERSION, exportPayload, parseImport, mergeImport, duplicateEncounter, resetEncounter, filterLibrary, campaignsOf, sameCampaign,
     HEALTH_BAND_CUTOFFS, HEALTH_BAND_BARS, healthBand, playerProjection,
     encounterDifficulty,
   };

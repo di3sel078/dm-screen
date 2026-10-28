@@ -5,9 +5,6 @@ const statusEl = document.getElementById("status");
 const statusTextEl = document.getElementById("status-text");
 const statusDotsEl = document.getElementById("status-dots");
 const orderEl = document.getElementById("order");
-const clockEl = document.getElementById("clock");
-const clockTimeEl = document.getElementById("clock-time");
-const clockRealEl = document.getElementById("clock-real");
 
 // Make an element with a class and optional text
 function makeEl(tag, className, text) {
@@ -207,7 +204,6 @@ function buildRow(c, isCurrent, position) {
 function render(state) {
   lastState = state;
   orderEl.innerHTML = "";
-  setClock(state ? state.clock : null);
 
   // No encounter open yet
   if (!state) {
@@ -222,7 +218,6 @@ function render(state) {
   const current = list[state.currentIndex];
   const next = list[state.nextIndex];
 
-  roundEl.textContent = "Round " + state.round;
   if (current) {
     // A group takes its turn as "Goblin group" rather than naming one of its members
     const turnName = current.turnName || current.name;
@@ -234,6 +229,8 @@ function render(state) {
     subEl.textContent = next ? "Up next: " + next.name : "";
     document.title = "Round " + state.round;
   }
+  // "Round N:" runs into the turn line beside it (no colon when there is no turn line)
+  roundEl.textContent = "Round " + state.round + (subEl.textContent ? ":" : "");
 
   // Position in the turn order starts at 1
   list.forEach((c, i) => {
@@ -267,41 +264,6 @@ function followTurn(state, current) {
     target.scrollIntoView({ block: "center", behavior: calm ? "auto" : "smooth" });
   }
 }
-
-// ---------- Encounter clock ----------
-// Combat time: the server sends it and whether it is running, and we tick on from there.
-// The real time of day comes from this screen's own clock.
-let clockBase = null;
-
-function formatClock(ms) {
-  const total = Math.floor(ms / 1000);
-  const h = Math.floor(total / 3600);
-  const m = Math.floor((total % 3600) / 60);
-  const s = total % 60;
-  const pad = (n) => String(n).padStart(2, "0");
-  return h ? h + ":" + pad(m) + ":" + pad(s) : pad(m) + ":" + pad(s);
-}
-
-function setClock(clock) {
-  clockBase = clock ? { ms: clock.ms, running: clock.running, at: Date.now() } : null;
-  showClock();
-}
-
-function showClock() {
-  clockEl.hidden = !clockBase;
-  if (!clockBase) {
-    return;
-  }
-  const ms = clockBase.ms + (clockBase.running ? Date.now() - clockBase.at : 0);
-  clockTimeEl.textContent = formatClock(ms);
-  // The real time of day on this screen
-  clockRealEl.textContent = new Date().toLocaleTimeString([], {
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
-
-setInterval(showClock, 250);
 
 // Show the connection state: "checking", "connected", or "disconnected"
 function setStatus(state) {

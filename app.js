@@ -34,8 +34,8 @@ const sessions = new Map();
 const failedLogins = new Map();
 
 // Password lock. When it is off, the DM page opens without a password, so only
-// turn it off on a network you trust (like home). It is saved, so it stays off
-// after a restart until you turn it back on in Settings.
+// turn it off on a network you trust (like home). It is not saved: every
+// start of the server begins locked.
 let locked = true;
 
 // Compare two strings without leaking timing information
@@ -97,28 +97,6 @@ const SAVE_FILE = path.join(SAVE_DIR, "state.json");
 
 // rev goes up by one on every save, so a device can tell if it is out of date
 let saved = { rev: 0, savedAt: 0, state: null };
-
-// The lock setting lives in its own small file next to the saved data
-const SETTINGS_FILE = path.join(SAVE_DIR, "settings.json");
-
-function loadSettings() {
-  try {
-    const file = JSON.parse(fs.readFileSync(SETTINGS_FILE, "utf8"));
-    locked = file.locked !== false;
-  } catch {
-    locked = true;
-  }
-  if (!locked) {
-    console.warn("WARNING: the password lock is OFF. Anyone who can reach this server can open the DM page.");
-    console.warn("Turn it back on in the DM page Settings.");
-  }
-}
-
-function saveSettings() {
-  fs.mkdirSync(SAVE_DIR, { recursive: true });
-  fs.writeFileSync(SETTINGS_FILE, JSON.stringify({ locked }));
-}
-loadSettings();
 
 // Read the save file at startup. A broken file is kept aside, never overwritten.
 function loadSaved() {
@@ -364,10 +342,8 @@ app.post("/api/lock", (req, res) => {
     return res.status(400).json({ error: "locked must be true or false." });
   }
   locked = req.body.locked;
-  try {
-    saveSettings();
-  } catch (err) {
-    console.error("Could not write settings.json:", err.message);
+  if (!locked) {
+    console.warn("WARNING: the password lock was turned OFF. It comes back on when the server restarts.");
   }
   res.json({ locked, signedIn: hasValidToken(req) });
 });

@@ -36,28 +36,6 @@
         ></span>
         <button
           class="icon-btn"
-          id="btn-shortcuts"
-          type="button"
-          title="Keyboard shortcuts (?)"
-          aria-label="Keyboard shortcuts"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            width="18"
-            height="18"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <rect x="2" y="6" width="20" height="12" rx="2" />
-            <path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10" />
-          </svg>
-        </button>
-        <button
-          class="icon-btn"
           id="btn-settings"
           type="button"
           title="Settings and data"
@@ -160,6 +138,7 @@
                   </svg>
                 </button>
               </div>
+              <span class="tracker-count" id="tracker-count"></span>
             </div>
 
             <div class="round-counter">
@@ -167,59 +146,91 @@
               <span class="round-number" id="round-number">1</span>
             </div>
 
-            <div class="tracker-controls">
-              <button
-                class="btn btn-ghost"
-                id="btn-prev-turn"
-                type="button"
-                title="Previous turn (P)"
-              >
-                <span class="chev" aria-hidden="true">‹</span> Prev
-              </button>
-              <button
-                class="btn btn-ghost"
-                id="btn-reset-round"
-                type="button"
-                title="Reset: put the round counter back to 1"
-              >
-                Reset
-              </button>
-              <button
-                class="btn btn-primary btn-lg"
-                id="btn-next-turn"
-                type="button"
-                title="Next turn (N)"
-              >
-                Next Turn <span class="chev" aria-hidden="true">›</span>
-              </button>
+            <div class="tracker-side">
+              <div class="tracker-side-top">
+                <button
+                  class="btn btn-ghost btn-sm"
+                  id="btn-reset-round"
+                  type="button"
+                  title="Put the whole encounter back to its start: round 1, full HP, no conditions, clock at 0"
+                >
+                  Reset Encounter
+                </button>
+                <button
+                  class="btn btn-outline-red btn-sm tracker-end"
+                  id="btn-end-encounter"
+                  type="button"
+                  title="Close this encounter and return to the Encounters list. It stays saved."
+                >
+                  End Encounter
+                </button>
+              </div>
+              <div class="tracker-controls">
+                <button
+                  class="btn btn-ghost btn-lg"
+                  id="btn-prev-turn"
+                  type="button"
+                  title="Previous turn (P)"
+                >
+                  <span class="chev" aria-hidden="true">‹</span> Prev Turn
+                </button>
+                <button
+                  class="btn btn-primary btn-lg"
+                  id="btn-next-turn"
+                  type="button"
+                  title="Next turn (N)"
+                >
+                  Next Turn <span class="chev" aria-hidden="true">›</span>
+                </button>
+              </div>
             </div>
           </div>
 
           <div class="turn-banner" id="turn-banner"></div>
 
           <div class="tracker-actions">
-            <div class="tracker-group">
+            <div class="tracker-group add-menu-wrap" id="add-menu-wrap">
               <button
-                class="btn btn-outline-light"
-                id="btn-add-pc"
+                class="btn btn-primary"
+                id="btn-add"
                 type="button"
+                aria-haspopup="true"
+                aria-expanded="false"
+                aria-controls="add-menu"
               >
-                + Add PC
+                + Add <span class="chev" aria-hidden="true">▾</span>
               </button>
-              <button
-                class="btn btn-outline-red"
-                id="btn-add-enemy"
-                type="button"
-              >
-                + Add Enemy
-              </button>
-              <button
-                class="btn btn-outline-gold"
-                id="btn-add-lair"
-                type="button"
-              >
-                + Lair Action
-              </button>
+              <div class="add-menu" id="add-menu" hidden>
+                <button
+                  class="btn btn-outline-light"
+                  id="btn-add-pc"
+                  type="button"
+                >
+                  Player Character
+                </button>
+                <button
+                  class="btn btn-outline-blue"
+                  id="btn-add-party"
+                  type="button"
+                  title="Add every PC from one campaign at once"
+                >
+                  Party
+                </button>
+                <button
+                  class="btn btn-outline-red"
+                  id="btn-add-enemy"
+                  type="button"
+                >
+                  Enemy
+                </button>
+                <button
+                  class="btn btn-outline-gold"
+                  id="btn-add-lair"
+                  type="button"
+                >
+                  Lair Action
+                </button>
+              </div>
             </div>
             <div class="segmented" role="group" aria-label="Card layout">
               <button
@@ -240,76 +251,23 @@
                 type="button"
                 aria-haspopup="dialog"
               ></button>
-              <span class="tracker-count" id="tracker-count"></span>
-              <div class="tracker-menu-wrap" id="tracker-menu-wrap">
-                <button
-                  class="btn btn-ghost btn-menu"
-                  id="btn-menu"
-                  type="button"
-                  aria-haspopup="true"
-                  aria-expanded="false"
-                  aria-controls="tracker-menu"
-                  title="Log, player view, hide enemies and end encounter"
-                  aria-label="More actions"
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="20"
-                    height="20"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
-                </button>
-                <div class="tracker-menu" id="tracker-menu" hidden>
-                  <button
-                    class="btn btn-ghost"
-                    id="btn-toggle-log"
-                    type="button"
-                    aria-pressed="false"
-                    aria-controls="log-drawer"
-                    title="Combat log (L)"
-                  >
-                    Log
-                  </button>
-                  <button
-                    class="btn btn-outline-light"
-                    id="btn-player-view"
-                    type="button"
-                    title="Open the player display: turn order, PC HP, enemy health bands and conditions only"
-                  >
-                    Player View
-                  </button>
-                  <button
-                    class="btn btn-ghost"
-                    id="btn-hide-enemies"
-                    type="button"
-                    title="Hide every enemy from the player display"
-                  >
-                    Hide all enemies
-                  </button>
-                  <button
-                    class="btn btn-ghost"
-                    id="btn-reveal-enemies"
-                    type="button"
-                    title="Show every hidden enemy on the player display"
-                  >
-                    Reveal all enemies
-                  </button>
-                  <button
-                    class="btn btn-outline-red"
-                    id="btn-end-encounter"
-                    type="button"
-                    title="Close this encounter and return to the Encounters list. It stays saved."
-                  >
-                    End Encounter
-                  </button>
-                </div>
-              </div>
+              <!-- Hides or reveals every enemy at once; the label follows the current state -->
+              <button
+                class="btn btn-ghost"
+                id="btn-toggle-enemies"
+                type="button"
+                title="Hide every enemy from the player display"
+              ></button>
+              <button
+                class="btn btn-ghost"
+                id="btn-toggle-log"
+                type="button"
+                aria-pressed="false"
+                aria-controls="log-drawer"
+                title="Combat log (L)"
+              >
+                Log
+              </button>
             </div>
           </div>
 
@@ -344,33 +302,83 @@
         <div class="library-columns">
           <section class="library-col" id="lib-pc-section">
             <div class="library-col-head">
-              <button
-                class="library-col-toggle"
-                id="lib-pc-toggle"
-                type="button"
-                data-collapse="lib-pc-body"
-                aria-expanded="true"
-                aria-controls="lib-pc-body"
-              >
-                <span class="collapse-caret" aria-hidden="true"></span>
-                <h3 class="library-col-title library-col-title--pc">
-                  Player Characters
-                </h3>
-              </button>
-              <button
-                class="btn btn-outline-light btn-sm"
-                id="btn-new-pc"
-                type="button"
-              >
-                + New PC
-              </button>
+              <h3 class="library-col-title library-col-title--pc">
+                Player Characters
+              </h3>
+              <div class="library-col-actions">
+                <button
+                  class="icon-btn icon-btn--img"
+                  id="lib-pc-search-toggle"
+                  type="button"
+                  data-collapse="lib-pc-search-panel"
+                  aria-expanded="true"
+                  aria-controls="lib-pc-search-panel"
+                  title="Search"
+                  aria-label="Search player characters"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.5-4.5" /></svg>
+                </button>
+                <button
+                  class="icon-btn icon-btn--img"
+                  id="lib-pc-filter-toggle"
+                  type="button"
+                  data-collapse="lib-pc-filter-panel"
+                  aria-expanded="true"
+                  aria-controls="lib-pc-filter-panel"
+                  title="Sort and filter"
+                  aria-label="Sort and filter player characters"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1" /><circle cx="15" cy="6" r="2" /><circle cx="9" cy="12" r="2" /><circle cx="17" cy="18" r="2" /></svg>
+                </button>
+                <button
+                  class="btn btn-outline-light btn-sm"
+                  id="btn-new-pc"
+                  type="button"
+                >
+                  + New PC
+                </button>
+              </div>
             </div>
-            <div id="lib-pc-body">
-              <div class="library-filter">
+            <div>
+              <div class="library-panel" id="lib-pc-search-panel">
                 <label class="field">
-                  <span class="field-label">Class</span>
-                  <select id="lib-class"></select>
+                  <span class="field-label">Search</span>
+                  <input
+                    type="search"
+                    id="lib-pc-search"
+                    placeholder="Name, class, race or campaign"
+                    autocomplete="off"
+                  />
                 </label>
+              </div>
+              <div class="library-panel" id="lib-pc-filter-panel">
+                <div class="library-filter">
+                  <label class="field">
+                    <span class="field-label">Sort by</span>
+                    <select id="lib-pc-sort">
+                      <option value="name">Name (A → Z)</option>
+                      <option value="name-desc">Name (Z → A)</option>
+                      <option value="campaign">Campaign</option>
+                      <option value="level">Level (high → low)</option>
+                      <option value="level-asc">Level (low → high)</option>
+                    </select>
+                  </label>
+                  <label class="field">
+                    <span class="field-label">Class</span>
+                    <select id="lib-class"></select>
+                  </label>
+                  <label class="field">
+                    <span class="field-label">Campaign</span>
+                    <select id="lib-pc-campaign"></select>
+                  </label>
+                  <button
+                    class="btn btn-ghost btn-sm"
+                    id="lib-pc-clear-filters"
+                    type="button"
+                  >
+                    Clear filters
+                  </button>
+                </div>
               </div>
               <div class="library-list" id="library-pcs"></div>
             </div>
@@ -387,7 +395,7 @@
                   id="lib-search-toggle"
                   type="button"
                   data-collapse="lib-search-panel"
-                  aria-expanded="false"
+                  aria-expanded="true"
                   aria-controls="lib-search-panel"
                   title="Search"
                   aria-label="Search enemies"
@@ -399,7 +407,7 @@
                   id="lib-filter-toggle"
                   type="button"
                   data-collapse="lib-filter-panel"
-                  aria-expanded="false"
+                  aria-expanded="true"
                   aria-controls="lib-filter-panel"
                   title="Sort and filter"
                   aria-label="Sort and filter enemies"
@@ -415,7 +423,7 @@
                 </button>
               </div>
             </div>
-            <div class="library-panel" id="lib-search-panel" hidden>
+            <div class="library-panel" id="lib-search-panel">
               <label class="field">
                 <span class="field-label">Search</span>
                 <input
@@ -426,7 +434,7 @@
                 />
               </label>
             </div>
-            <div class="library-panel" id="lib-filter-panel" hidden>
+            <div class="library-panel" id="lib-filter-panel">
               <div class="library-filter">
                 <label class="field">
                   <span class="field-label">Sort by</span>
@@ -544,6 +552,18 @@
             </label>
           </div>
 
+          <div class="field-row" data-for="enemy">
+            <label class="field field--grow">
+              <span class="field-label">Player alias (optional)</span>
+              <input
+                type="text"
+                name="alias"
+                autocomplete="off"
+                placeholder="What the players see instead of the name"
+              />
+            </label>
+          </div>
+
           <div class="field-row" data-for="pc">
             <label class="field">
               <span class="field-label">Class</span>
@@ -557,6 +577,17 @@
                 autocomplete="off"
                 placeholder="e.g. Half-Elf"
               />
+            </label>
+            <label class="field">
+              <span class="field-label">Campaign</span>
+              <input
+                type="text"
+                name="campaign"
+                list="campaign-list"
+                autocomplete="off"
+                placeholder="e.g. Curse of Strahd"
+              />
+              <datalist id="campaign-list"></datalist>
             </label>
           </div>
 
@@ -612,7 +643,7 @@
             </label>
             <label class="field" id="creature-initiative-field">
               <span class="field-label" id="creature-initiative-label">Initiative</span>
-              <input type="number" name="initiative" value="0" />
+              <input type="number" name="initiative" placeholder="10" />
             </label>
           </div>
 
@@ -916,7 +947,7 @@
           <div class="field-row">
             <label class="field">
               <span class="field-label" id="picker-init-label">Initiative</span>
-              <input type="number" name="initiative" value="0" />
+              <input type="number" name="initiative" placeholder="10" />
             </label>
             <label class="field" id="picker-count-field">
               <span class="field-label">How many</span>
@@ -949,6 +980,49 @@
       </form>
     </dialog>
 
+    <!-- ============ ADD PARTY ============ -->
+    <dialog
+      class="modal modal-sm"
+      id="party-modal"
+      aria-labelledby="party-title"
+    >
+      <form class="modal-form" id="party-form" method="dialog" novalidate>
+        <div class="modal-head">
+          <h2 class="modal-title" id="party-title">Add Party</h2>
+          <button
+            class="icon-btn modal-close"
+            type="button"
+            data-close
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <label class="field field-wide" id="party-select-field">
+            <span class="field-label">Party (campaign)</span>
+            <select name="campaign" id="party-select"></select>
+          </label>
+          <ul class="party-list" id="party-list"></ul>
+          <p class="detail-hint" id="party-hint">
+            Type each PC's d20 roll; their initiative bonus is added when they
+            join.
+          </p>
+          <label class="checkbox-field" id="party-hidden-field">
+            <input type="checkbox" name="startHidden" />
+            <span>Start hidden from the players</span>
+          </label>
+          <p class="picker-empty hidden" id="party-empty"></p>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" type="button" data-close>Cancel</button>
+          <button class="btn btn-primary" type="submit" id="party-submit">
+            Add Party
+          </button>
+        </div>
+      </form>
+    </dialog>
+
     <!-- ============ GROUP DIALOG ============ -->
     <dialog
       class="modal modal-sm"
@@ -970,6 +1044,9 @@
         <div class="modal-body">
           <p class="detail-text" id="group-text"></p>
           <div class="group-list" id="group-list"></div>
+          <button class="btn btn-outline-light btn-sm" type="button" id="group-add">
+            + Add enemy
+          </button>
         </div>
         <div class="modal-foot modal-foot--split">
           <button class="btn btn-outline-red" type="button" id="group-disband">
@@ -1140,6 +1217,14 @@
             <label class="checkbox-field">
               <input type="checkbox" id="opt-arrow-keys-settings" />
               <span>Use the arrow keys for turns</span>
+            </label>
+            <label class="checkbox-field">
+              <input type="checkbox" id="opt-econ-pcs" />
+              <span>Track action, bonus action and reaction for PCs</span>
+            </label>
+            <label class="checkbox-field">
+              <input type="checkbox" id="opt-econ-enemies" />
+              <span>Track action, bonus action and reaction for enemies</span>
             </label>
           </section>
           <section class="detail-section">

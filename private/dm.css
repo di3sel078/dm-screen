@@ -102,9 +102,10 @@ input[type="number"]::-webkit-inner-spin-button {
   top: 0;
   z-index: 20;
   height: var(--topbar-h);
-  display: flex;
+  /* Equal side columns keep the tabs at the exact center of the bar */
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
   gap: var(--sp-6);
   padding: 0 var(--sp-6);
   background: linear-gradient(
@@ -555,6 +556,11 @@ input[type="number"]::-webkit-inner-spin-button {
   }
 }
 
+/* Prev Turn and Next Turn share one width */
+#btn-prev-turn,
+#btn-next-turn {
+  min-width: 9.5rem;
+}
 .tracker-controls {
   display: flex;
   justify-content: flex-end;
@@ -1754,6 +1760,17 @@ input[type="number"]::-webkit-inner-spin-button {
   box-shadow: var(--glow-gold-lg);
 }
 
+/* Light blue outline, used for the Party item in the "+ Add" menu */
+.btn-outline-blue {
+  background: transparent;
+  border-color: var(--blue-300);
+  color: var(--blue-300);
+}
+.btn-outline-blue:hover {
+  background: var(--blue-glow-soft);
+  box-shadow: var(--glow-blue-soft);
+}
+
 .clock {
   display: inline-flex;
   align-items: center;
@@ -2486,37 +2503,23 @@ button.chip {
     grid-template-columns: 1fr auto 1fr;
   }
 }
-/* Hamburger button with a dropdown of the less-used actions */
-.tracker-menu-wrap {
-  position: relative;
+/* The count pill sits beside the clock in the header */
+.tracker-name .tracker-count {
+  display: inline-block;
+  margin: var(--sp-2) 0 0 var(--sp-2);
+  vertical-align: top;
 }
-.btn-menu {
-  display: inline-grid;
-  place-items: center;
-  padding: var(--sp-1) var(--sp-2);
+/* Reset Encounter and End Encounter, side by side */
+.tracker-side-top {
+  display: flex;
+  gap: var(--sp-2);
 }
-.tracker-menu {
-  position: absolute;
-  top: calc(100% + var(--sp-2));
-  right: 0;
-  z-index: 40;
+/* Right column of the header: End Encounter above the turn buttons, so they never overlap */
+.tracker-side {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-1);
-  min-width: 12rem;
-  padding: var(--sp-2);
-  border-radius: var(--r-md);
-  border: 1px solid var(--border-mid);
-  background: var(--bg-2);
-  box-shadow: var(--shadow-card);
-}
-.tracker-menu[hidden] {
-  display: none;
-}
-.tracker-menu .btn {
-  width: 100%;
-  justify-content: flex-start;
-  text-align: left;
+  align-items: flex-end;
+  gap: var(--sp-2);
 }
 .checkbox-field--sm {
   font-size: var(--fs-xs);
@@ -2607,21 +2610,76 @@ button.chip {
 .card-economy {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--sp-1);
+  align-items: center;
+  gap: var(--sp-2);
 }
-.chip--econ {
+/* The HP block and the action pills side by side; the pills stack just to its right */
+.hp-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.hp-row > .hp-block {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.hp-row > .card-economy {
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: stretch;
+  flex-wrap: nowrap;
+}
+/* The list view places the row where the HP block used to go */
+.is-compact .hp-row {
+  grid-column: 2;
+  grid-row: 1;
+}
+/* Minimized group rows have no pills, so their HP block keeps its old place */
+.group-box.is-min .card--member .hp-row {
+  display: contents;
+}
+/* Action, Bonus and Reaction pills: green outline is available, grey outline is spent. The tap area is padded out to about 36px tall. */
+.econ-pill {
+  position: relative;
+  justify-content: center;
+  min-width: 5.5rem;
+  min-height: 1.75rem;
   border-color: var(--green-500);
+  background: transparent;
   color: var(--green-300);
+  font-weight: 700;
+  cursor: pointer;
 }
-.chip--econ.is-used {
-  border-style: dashed;
+.econ-pill::after {
+  content: "";
+  position: absolute;
+  inset: -4px -6px;
+}
+.econ-pill.is-spent {
+  background: transparent;
   border-color: var(--border-mid);
-  color: var(--text-2);
-  text-decoration: line-through;
+  color: var(--text-3);
 }
-.chip--econ:disabled {
+.econ-pill:hover:not(:disabled) {
+  background: var(--green-glow-soft);
+}
+.econ-pill:disabled {
   cursor: not-allowed;
-  opacity: 0.7;
+  opacity: 0.6;
+}
+/* Shows beside the name while a creature is surprised, like the Hidden and Down tags */
+.card-surprised-tag {
+  margin-left: var(--sp-2);
+  padding: var(--sp-px) var(--sp-2);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--amber-500);
+  background: var(--amber-glow-soft);
+  color: var(--amber-300);
+  font-size: var(--fs-2xs);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  vertical-align: middle;
+  white-space: nowrap;
 }
 .chip--surprised.is-on {
   border-color: var(--amber-500);
@@ -3077,10 +3135,10 @@ button.chip {
 .topbar-tools {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--sp-2);
 }
 .icon-btn:focus-visible,
-.library-col-toggle:focus-visible,
 .tab:focus-visible,
 .segmented button:focus-visible,
 .check-chip:focus-within,
@@ -3284,11 +3342,6 @@ kbd {
 .is-compact .card-status {
   grid-row: 1;
 }
-/* Action chips stretch to fill their cell; the conditions column only takes room when needed */
-.is-compact .card-economy .chip {
-  flex: 1 1 auto;
-  justify-content: center;
-}
 .is-compact .conc-check {
   grid-row: 2;
 }
@@ -3413,28 +3466,6 @@ kbd {
   align-items: center;
   gap: var(--sp-2);
 }
-/* PC list title doubles as the show/hide button */
-.library-col-toggle {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-}
-.collapse-caret {
-  width: 0;
-  height: 0;
-  border-left: 0.3rem solid transparent;
-  border-right: 0.3rem solid transparent;
-  border-top: 0.4rem solid var(--text-2);
-  transition: transform var(--dur-fast);
-}
-.library-col-toggle[aria-expanded="false"] .collapse-caret {
-  transform: rotate(-90deg);
-}
 /* Search and filter buttons: inline SVG icons, lit up while their panel is open */
 .icon-btn--img:hover {
   color: var(--text-0);
@@ -3471,6 +3502,9 @@ kbd {
     justify-items: center;
     text-align: center;
   }
+  .tracker-side {
+    align-items: center;
+  }
   .tracker-controls {
     justify-content: center;
     flex-wrap: wrap;
@@ -3492,6 +3526,9 @@ kbd {
 
 @media (max-width: 900px) {
   .topbar {
+    /* Too narrow to center the tabs: brand, scrolling tabs, tools in a row */
+    display: flex;
+    justify-content: space-between;
     gap: var(--sp-3);
     padding: 0 var(--sp-4);
   }
@@ -3697,6 +3734,13 @@ kbd {
   gap: var(--sp-2);
   margin-top: var(--sp-3);
 }
+#group-add {
+  margin-top: var(--sp-3);
+}
+#group-add[hidden],
+#group-disband[hidden] {
+  display: none;
+}
 .group-list small {
   color: var(--text-2);
 }
@@ -3801,6 +3845,7 @@ kbd {
   max-width: 14rem;
 }
 .group-box.is-min .card--member .card-vitals,
+.group-box.is-min .card--member .card-economy,
 .group-box.is-min .card--member .card-type,
 .group-box.is-min .card--member .hp-state,
 .group-box.is-min .card--member .hp-label,
@@ -3938,8 +3983,9 @@ kbd {
   grid-row: 2;
   grid-column: 2;
 }
-/* The HP line reads: HP, the HP numbers, temp HP, and the health status as a pill at the top right */
-.is-compact .card:not(.card--member):not(.card--group) .hp-state {
+/* The HP box is shared by ungrouped entries and enemies in an expanded group.
+   The HP line reads: HP, the HP numbers, temp HP, and the health status as a pill at the top right */
+:is(.is-compact .card:not(.card--member):not(.card--group), .is-compact .group-box:not(.is-min) .card--member) .hp-state {
   order: 4;
   margin-left: auto;
   padding: var(--sp-px) var(--sp-2);
@@ -3950,47 +3996,115 @@ kbd {
   text-transform: uppercase;
   white-space: nowrap;
 }
-.is-compact .card:not(.card--member):not(.card--group) .hp-top {
+:is(.is-compact .card:not(.card--member):not(.card--group), .is-compact .group-box:not(.is-min) .card--member) .hp-top {
   gap: var(--sp-3);
 }
 /* Each HP number is only as wide as its digits, so "7 / 120" sits snug against the HP label */
-.is-compact .card:not(.card--member):not(.card--group) .hp-values {
+:is(.is-compact .card:not(.card--member):not(.card--group), .is-compact .group-box:not(.is-min) .card--member) .hp-values {
   gap: var(--sp-05);
 }
-.is-compact .card:not(.card--member):not(.card--group) .hp-values input {
+:is(.is-compact .card:not(.card--member):not(.card--group), .is-compact .group-box:not(.is-min) .card--member) .hp-values input {
   width: calc((var(--digits, 2) + 1) * 1ch);
 }
-.is-compact .card:not(.card--member):not(.card--group) .hp-label {
+:is(.is-compact .card:not(.card--member):not(.card--group), .is-compact .group-box:not(.is-min) .card--member) .hp-label {
   order: 1;
 }
-.is-compact .card:not(.card--member):not(.card--group) .hp-values {
+:is(.is-compact .card:not(.card--member):not(.card--group), .is-compact .group-box:not(.is-min) .card--member) .hp-values {
   order: 2;
   margin-left: 0;
 }
-.is-compact .card:not(.card--member):not(.card--group) .hp-top .hp-temp {
+:is(.is-compact .card:not(.card--member):not(.card--group), .is-compact .group-box:not(.is-min) .card--member) .hp-top .hp-temp {
   order: 3;
   margin-left: 0;
 }
-.is-compact .card:not(.card--member):not(.card--group) .hp-bar {
+:is(.is-compact .card:not(.card--member):not(.card--group), .is-compact .group-box:not(.is-min) .card--member) .hp-bar {
   flex: 1 1 100%;
 }
-.is-compact .card:not(.card--member):not(.card--group) .hp-adjust {
+:is(.is-compact .card:not(.card--member):not(.card--group), .is-compact .group-box:not(.is-min) .card--member) .hp-adjust {
   flex: 1 1 16rem;
   flex-wrap: wrap;
   margin: 0;
 }
-.is-compact .card:not(.card--member):not(.card--group) .hp-adjust input[type="number"] {
+:is(.is-compact .card:not(.card--member):not(.card--group), .is-compact .group-box:not(.is-min) .card--member) .hp-adjust input[type="number"] {
   flex: 0 0 auto;
   width: 4.5rem;
 }
-.is-compact .card:not(.card--member):not(.card--group) .hp-adjust select {
+:is(.is-compact .card:not(.card--member):not(.card--group), .is-compact .group-box:not(.is-min) .card--member) .hp-adjust select {
   flex: 1 1 auto;
   min-width: 5.5rem;
 }
-.is-compact .card:not(.card--member):not(.card--group) .crit-toggle {
+:is(.is-compact .card:not(.card--member):not(.card--group), .is-compact .group-box:not(.is-min) .card--member) .crit-toggle {
   flex: 0 0 auto;
 }
-.is-compact .card:not(.card--member):not(.card--group) .hp-adjust-btns {
+:is(.is-compact .card:not(.card--member):not(.card--group), .is-compact .group-box:not(.is-min) .card--member) .hp-adjust-btns {
   flex: 1 1 14rem;
   margin: 0;
+}
+
+/* ---------- Add Party dialog ---------- */
+.party-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.party-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-1);
+}
+.party-row label {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.party-name {
+  font-weight: 700;
+}
+.party-meta {
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+}
+.party-row input {
+  width: 5rem;
+  min-height: var(--touch-target);
+  text-align: center;
+}
+.party-row.is-taken {
+  opacity: 0.55;
+}
+
+/* ---------- "+ Add" dropdown ---------- */
+.add-menu-wrap {
+  position: relative;
+}
+.add-menu {
+  position: absolute;
+  top: calc(100% + var(--sp-2));
+  left: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  min-width: 13rem;
+  padding: var(--sp-2);
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-mid);
+  background: var(--bg-2);
+  box-shadow: var(--shadow-card);
+}
+.add-menu[hidden] {
+  display: none;
+}
+.add-menu .btn {
+  width: 100%;
+  justify-content: flex-start;
+  min-height: var(--touch-target);
 }
